@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 #include <webgpu/webgpu_cpp.h>
 #include <webgpu/webgpu_cpp_print.h>
-
+#include <nvrhi/nvrhi.h>
+#include <nvrhi/webgpu.h>
 #include <cstdlib>
 #include <iostream>
+#include "util.h"
 // Demonstrate some basic assertions.
 TEST(HelloTest, BasicAssertions) {
     // Expect two strings not to be equal.
@@ -12,12 +14,12 @@ TEST(HelloTest, BasicAssertions) {
     EXPECT_EQ(7 * 6, 42);
 }
 
-TEST(WgpuTest, BasicAssertions) {
+TEST(DawnTest, BasicAssertions) {
     static constexpr auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
     wgpu::InstanceDescriptor instanceDescriptor{
         .requiredFeatureCount = 1,
         .requiredFeatures = &kTimedWaitAny
-      };
+    };
 
     wgpu::Instance instance = wgpu::CreateInstance(&instanceDescriptor);
 
@@ -54,69 +56,21 @@ TEST(WgpuTest, BasicAssertions) {
     std::cout << "Driver description: " << info.description << "\n";
 
 
-    wgpu::DeviceDescriptor deviceDesc = {};
-    deviceDesc.nextInChain = nullptr;
-    deviceDesc.SetDeviceLostCallback(
-        wgpu::CallbackMode::AllowSpontaneous,
-        [](const wgpu::Device&, wgpu::DeviceLostReason reason, wgpu::StringView message) {
-            const char* reasonName = "";
-            switch (reason) {
-                case wgpu::DeviceLostReason::Unknown:
-                    reasonName = "Unknown";
-                    break;
-                case wgpu::DeviceLostReason::Destroyed:
-                    reasonName = "Destroyed";
-                    break;
-                case wgpu::DeviceLostReason::CallbackCancelled:
-                    reasonName = "CallbackCancelled";
-                    break;
-                case wgpu::DeviceLostReason::FailedCreation:
-                    reasonName = "FailedCreation";
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected device lost reason");
-            }
-            std::cerr << "Device lost because of " << reasonName << ": " << message;
-        });
-    deviceDesc.SetUncapturedErrorCallback(
-        [](const wgpu::Device&, wgpu::ErrorType type, wgpu::StringView message) {
-            const char* errorTypeName = "";
-            switch (type) {
-                case wgpu::ErrorType::Validation:
-                    errorTypeName = "Validation";
-                    break;
-                case wgpu::ErrorType::OutOfMemory:
-                    errorTypeName = "Out of memory";
-                    break;
-                case wgpu::ErrorType::Internal:
-                    errorTypeName = "Internal";
-                    break;
-                case wgpu::ErrorType::Unknown:
-                    errorTypeName = "Unknown";
-                    break;
-                default:
-                    throw std::runtime_error("Unexpected error type");
-            }
-            std::cerr << errorTypeName << " error: " << message;
-        });
+    wgpu::Device device = create_device(instance, adapter);
+    wgpu::Queue queue = device.GetQueue();
 
-    wgpu::Device device = nullptr;
-    wgpu::Queue queue = nullptr;
-
-    // Synchronously create the device
-    instance.WaitAny(
-        adapter.RequestDevice(
-            &deviceDesc, wgpu::CallbackMode::WaitAnyOnly,
-            [&device,&queue](wgpu::RequestDeviceStatus status, wgpu::Device dv, wgpu::StringView message) {
-                if (status != wgpu::RequestDeviceStatus::Success) {
-                    std::cerr << "Failed to get an device: " << message;
-                    throw std::runtime_error("Failed to get an device");
-                }
-                device = std::move(dv);
-                queue = device.GetQueue();
-            }),
-        UINT64_MAX);
 
     EXPECT_NE(device, nullptr);
     EXPECT_NE(queue, nullptr);
+}
+
+TEST(NvrhiTest, BasicAssertions) {
+    wgpu::InstanceDescriptor instanceDescriptor = nvrhi::webgpu::utils::create_instance_descriptor();
+    wgpu::Instance instance = wgpu::CreateInstance(&instanceDescriptor);
+    wgpu::Adapter adapter = nvrhi::webgpu::utils::create_adapter(
+        instance, nvrhi::webgpu::utils::create_adapter_option(wgpu::BackendType::Metal,
+                                                              wgpu::AdapterType::IntegratedGPU));
+    wgpu::Device device = create_device(instance, adapter);
+    wgpu::Queue queue = device.GetQueue();
+    auto m_NvrhiDevice = nvrhi::webgpu::createDevice({device, queue});
 }
