@@ -7,6 +7,7 @@ include(FetchContent)
 find_package(Threads)
 
 find_package(Dawn REQUIRED)
+find_package(glfw3 REQUIRED)
 
 # Configure NVRHI settings before FetchContent (correct approach)
 set(NVRHI_WITH_VULKAN OFF CACHE BOOL "Enable Vulkan Backend" FORCE)
@@ -38,7 +39,10 @@ enable_testing()
 
 add_executable(nvrhi_unit_test main.cpp
         util.cpp
-        util.h)
+        util.h
+        metal.mm
+        metal.h
+)
 
 target_link_libraries(
         nvrhi_unit_test
@@ -46,6 +50,11 @@ target_link_libraries(
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu
+        glfw
+        "-framework Metal"
+        "-framework QuartzCore"
 )
+
 include(GoogleTest)
+
 gtest_discover_tests(nvrhi_unit_test)
