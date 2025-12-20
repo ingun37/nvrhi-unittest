@@ -12,6 +12,7 @@
 #include "util.h"
 #include <GLFW/glfw3.h>
 #include "metal.h"
+#include "../../../../Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/cstring"
 
 int main() {
     GLFWwindow* window;
@@ -52,7 +53,30 @@ int main() {
     config.presentMode = capabilities.presentModes[0];
     surface.Configure(&config);
     auto preferredSurfaceTextureFormat = capabilities.formats[0];
+    nvrhi::TextureDesc stagingTextureDesc{};
+    stagingTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
+    auto stagingTexture = nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
+    nvrhi::TextureSlice stagingTextureSlice{};
+    size_t pitch;
+    auto mapPtr = nvrhiDevice->mapStagingTexture(stagingTexture,
+                                                 stagingTextureSlice,
+                                                 nvrhi::CpuAccessMode::Write,
+                                                 &pitch);
+    const char pixelBuff[] = {0x12, 0x34, 0x56, 0x78};
+    memcpy(mapPtr, pixelBuff, 4);
 
+    nvrhiDevice->unmapStagingTexture(stagingTexture);
+
+    nvrhi::TextureDesc destTextureDesc{};
+    destTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
+    auto destTexture = nvrhiDevice->createTexture(destTextureDesc);
+
+    auto commandList = nvrhiDevice->createCommandList();
+    commandList->open();
+    nvrhi::TextureSlice destSlice{};
+    commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
+    commandList->close();
+    nvrhiDevice->executeCommandList(commandList);
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
