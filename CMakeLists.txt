@@ -61,3 +61,24 @@ target_link_libraries(
 include(GoogleTest)
 
 gtest_discover_tests(nvrhi_unit_test)
+
+
+add_executable(app app.cpp
+        util.cpp
+        util.h
+        metal.mm
+        metal.h
+        stb_image.h
+        helper.cpp
+        helper.h
+)
+
+target_link_libraries(
+        app
+        dawn::webgpu_dawn
+        nvrhi
+        nvrhi_webgpu
+        glfw
+        "-framework Metal"
+        "-framework QuartzCore"
+)
