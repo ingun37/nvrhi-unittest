@@ -54,9 +54,13 @@ int main() {
     surface.Configure(&config);
     auto preferredSurfaceTextureFormat = capabilities.formats[0];
     nvrhi::TextureDesc stagingTextureDesc{};
+    stagingTextureDesc.width = 64;
+    stagingTextureDesc.height = 1;
     stagingTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
     auto stagingTexture = nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
     nvrhi::TextureSlice stagingTextureSlice{};
+    stagingTextureSlice.width = 64;
+    stagingTextureSlice.height = 1;
     size_t pitch;
     auto mapPtr = nvrhiDevice->mapStagingTexture(stagingTexture,
                                                  stagingTextureSlice,
@@ -68,12 +72,16 @@ int main() {
     nvrhiDevice->unmapStagingTexture(stagingTexture);
 
     nvrhi::TextureDesc destTextureDesc{};
+    destTextureDesc.width = 64;
+    destTextureDesc.height = 1;
     destTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
     auto destTexture = nvrhiDevice->createTexture(destTextureDesc);
 
     auto commandList = nvrhiDevice->createCommandList();
     commandList->open();
     nvrhi::TextureSlice destSlice{};
+    destSlice.width = 64;
+    destSlice.height = 1;
     commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
     commandList->close();
     nvrhiDevice->executeCommandList(commandList);
