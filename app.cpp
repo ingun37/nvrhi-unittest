@@ -5,14 +5,13 @@
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/webgpu.h>
 #include <webgpu/webgpu_cpp.h>
-#include <webgpu/webgpu_cpp_print.h>
-
-#include <cstdlib>
 #include <iostream>
 #include "util.h"
 #include <GLFW/glfw3.h>
+
+#include "helper.h"
 #include "metal.h"
-#include "../../../../Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/cstring"
+
 
 int main() {
     GLFWwindow* window;
@@ -35,7 +34,7 @@ int main() {
         nvrhi::webgpu::utils::create_adapter_option(wgpu::BackendType::Metal, wgpu::AdapterType::IntegratedGPU));
     wgpu::Device device = create_device(instance, adapter);
     wgpu::Queue queue = device.GetQueue();
-    auto nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});
+    nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});
 
     auto chainedDescriptor = SetupWindowAndGetSurfaceDescriptorCocoa(window);
 
@@ -53,44 +52,47 @@ int main() {
     config.presentMode = capabilities.presentModes[0];
     surface.Configure(&config);
     auto preferredSurfaceTextureFormat = capabilities.formats[0];
+
+    auto image = Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl.png");
+
     nvrhi::TextureDesc stagingTextureDesc{};
-    stagingTextureDesc.width = 64;
-    stagingTextureDesc.height = 1;
-    stagingTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
+    stagingTextureDesc.width = image.width;
+    stagingTextureDesc.height = image.height;
+    stagingTextureDesc.format = image.format();
     auto stagingTexture = nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
     nvrhi::TextureSlice stagingTextureSlice{};
-    stagingTextureSlice.width = 64;
-    stagingTextureSlice.height = 1;
+    stagingTextureSlice.width = image.width;
+    stagingTextureSlice.height = image.height;
     size_t pitch;
     auto mapPtr = nvrhiDevice->mapStagingTexture(stagingTexture,
                                                  stagingTextureSlice,
                                                  nvrhi::CpuAccessMode::Write,
                                                  &pitch);
-    const char pixelBuff[] = {0x12, 0x34, 0x56, 0x78};
-    memcpy(mapPtr, pixelBuff, 4);
+    memcpy(mapPtr, image.data.data(), image.data.size());
 
     nvrhiDevice->unmapStagingTexture(stagingTexture);
 
     nvrhi::TextureDesc destTextureDesc{};
-    destTextureDesc.width = 64;
-    destTextureDesc.height = 1;
-    destTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
+    destTextureDesc.width = image.width;
+    destTextureDesc.height = image.height;
+    destTextureDesc.format = image.format();
     auto destTexture = nvrhiDevice->createTexture(destTextureDesc);
 
     auto commandList = nvrhiDevice->createCommandList();
-    commandList->open();
     nvrhi::TextureSlice destSlice{};
-    destSlice.width = 64;
-    destSlice.height = 1;
-    commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
-    commandList->close();
-    nvrhiDevice->executeCommandList(commandList);
+    destSlice.width = image.width;
+    destSlice.height = image.height;
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
+        commandList->open();
+        commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
+        commandList->close();
+        nvrhiDevice->executeCommandList(commandList);
+
         // glClear(GL_COLOR_BUFFER_BIT);
 
         /* Swap front and back buffers */
