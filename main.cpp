@@ -10,6 +10,8 @@
 #include "util.h"
 #include <GLFW/glfw3.h>
 #include "metal.h"
+#include "stb_image.h"
+#include "helper.h"
 // Demonstrate some basic assertions.
 TEST(HelloTest, BasicAssertions) {
     // Expect two strings not to be equal.
@@ -149,6 +151,8 @@ TEST(GLFWTest, BasicAssertions) {
         nvrhi::webgpu::utils::create_adapter_option(wgpu::BackendType::Metal, wgpu::AdapterType::IntegratedGPU));
     wgpu::Device device = create_device(instance, adapter);
     wgpu::Queue queue = device.GetQueue();
+    auto nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});
+
     auto chainedDescriptor = SetupWindowAndGetSurfaceDescriptorCocoa(window);
 
     wgpu::SurfaceDescriptor descriptor;

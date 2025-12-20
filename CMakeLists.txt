@@ -42,7 +42,7 @@ add_executable(nvrhi_unit_test main.cpp
         util.h
         metal.mm
         metal.h
-        std_image.h
+        stb_image.h
         helper.cpp
         helper.h
 )
