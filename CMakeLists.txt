@@ -82,3 +82,23 @@ target_link_libraries(
         "-framework Metal"
         "-framework QuartzCore"
 )
+
+add_executable(cli cli.cpp
+        util.cpp
+        util.h
+        metal.mm
+        metal.h
+        stb_image.h
+        helper.cpp
+        helper.h
+)
+
+target_link_libraries(
+        cli
+        dawn::webgpu_dawn
+        nvrhi
+        nvrhi_webgpu
+        glfw
+        "-framework Metal"
+        "-framework QuartzCore"
+)
