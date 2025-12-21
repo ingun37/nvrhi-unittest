@@ -79,6 +79,7 @@ target_link_libraries(
         nvrhi
         nvrhi_webgpu
         Image
+        webgpu_util
 )
 
 find_package(Vulkan REQUIRED MoltenVK)

@@ -5,7 +5,7 @@
 #include <webgpu/webgpu_cpp.h>
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/webgpu.h>
-#include "util.h"
+#include <webgpu-util.h>
 #include "cli_app.h"
 
 
