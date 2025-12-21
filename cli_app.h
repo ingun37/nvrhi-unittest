@@ -1,14 +1,13 @@
 //
-// Created by Ingun Jon on 12/20/25.
+// Created by Ingun Jon on 12/21/25.
 //
 
+#ifndef NVRHI_UNIT_TEST_APP_H
+#define NVRHI_UNIT_TEST_APP_H
 #include <iostream>
 #include <string>
 #include <utility>
-#include <webgpu/webgpu_cpp.h>
 #include <nvrhi/nvrhi.h>
-#include <nvrhi/webgpu.h>
-#include "util.h"
 #include "helper.h"
 #include <memory>
 
@@ -139,20 +138,8 @@ struct ImageLoading : public App {
     }
 };
 
-
-int main() {
+void run_app(Context&& webGpu) {
     std::string input;
-
-    wgpu::InstanceDescriptor instanceDescriptor = nvrhi::webgpu::utils::create_instance_descriptor();
-    wgpu::Instance instance = wgpu::CreateInstance(&instanceDescriptor);
-    wgpu::Adapter adapter = nvrhi::webgpu::utils::create_adapter(
-        instance,
-        nvrhi::webgpu::utils::create_adapter_option(wgpu::BackendType::Metal, wgpu::AdapterType::IntegratedGPU));
-    wgpu::Device device = create_device(instance, adapter);
-    wgpu::Queue queue = device.GetQueue();
-    nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});;
-
-    Context webGpu(nvrhiDevice);
 
     AppPtr app = std::make_unique<ImageLoading>(webGpu);
     while (true) {
@@ -161,5 +148,6 @@ int main() {
         if (input == "exit") break;
         app = std::move(app->run());
     }
-    return 0;
 }
+
+#endif //NVRHI_UNIT_TEST_APP_H

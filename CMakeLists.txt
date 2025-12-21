@@ -83,7 +83,7 @@ target_link_libraries(
         "-framework QuartzCore"
 )
 
-add_executable(cli cli.cpp
+add_executable(cli_webgpu cli_webgpu.cpp cli_app.h
         util.cpp
         util.h
         metal.mm
@@ -94,7 +94,7 @@ add_executable(cli cli.cpp
 )
 
 target_link_libraries(
-        cli
+        cli_webgpu
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu
