@@ -12,16 +12,16 @@
 #include "helper.h"
 #include <memory>
 
-struct WebGPU {
+struct Context {
     wgpu::Instance instance;
     wgpu::Adapter adapter;
     wgpu::Device device;
     wgpu::Queue queue;
     nvrhi::DeviceHandle nvrhiDevice;
 
-    WebGPU() = delete;
+    Context() = delete;
 
-    WebGPU(wgpu::Instance instance,
+    Context(wgpu::Instance instance,
            wgpu::Adapter adapter,
            wgpu::Device device,
            wgpu::Queue queue,
@@ -37,11 +37,11 @@ struct WebGPU {
 struct App {
     virtual ~App() = default;
 
-    const WebGPU& webGpu;
+    const Context& context;
     const std::string title;
 
-    App(const WebGPU& webGpu, std::string title)
-        : webGpu(webGpu),
+    App(const Context& webGpu, std::string title)
+        : context(webGpu),
           title(std::move(title)) {
     }
 
@@ -59,7 +59,7 @@ struct CommandExecution : public App {
 
     CommandExecution() = delete;
 
-    CommandExecution(const WebGPU& webGPU,
+    CommandExecution(const Context& webGPU,
                      nvrhi::CommandListHandle commandList,
                      nvrhi::TextureHandle destTexture,
                      const nvrhi::TextureSlice& destSlice,
@@ -77,8 +77,8 @@ struct CommandExecution : public App {
         commandList->open();
         commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
         commandList->close();
-        webGpu.nvrhiDevice->executeCommandList(commandList);
-        return std::make_unique<CommandExecution>(webGpu,
+        context.nvrhiDevice->executeCommandList(commandList);
+        return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
                                                   destSlice,
@@ -90,7 +90,7 @@ struct CommandExecution : public App {
 struct ResourceSetup : public App {
     Image image;
 
-    ResourceSetup(Image image, const WebGPU& webGPU)
+    ResourceSetup(Image image, const Context& webGPU)
         : App(webGPU, "Set up textuere reosurces and copy image to staged buffer"),
           image(std::move(image)) {
     }
@@ -100,31 +100,31 @@ struct ResourceSetup : public App {
         stagingTextureDesc.width = image.width;
         stagingTextureDesc.height = image.height;
         stagingTextureDesc.format = image.format();
-        auto stagingTexture = webGpu.nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
+        auto stagingTexture = context.nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
         nvrhi::TextureSlice stagingTextureSlice{};
         stagingTextureSlice.width = image.width;
         stagingTextureSlice.height = image.height;
         size_t pitch;
-        auto mapPtr = webGpu.nvrhiDevice->mapStagingTexture(stagingTexture,
+        auto mapPtr = context.nvrhiDevice->mapStagingTexture(stagingTexture,
                                                             stagingTextureSlice,
                                                             nvrhi::CpuAccessMode::Write,
                                                             &pitch);
         memcpy(mapPtr, image.data.data(), image.data.size());
 
-        webGpu.nvrhiDevice->unmapStagingTexture(stagingTexture);
+        context.nvrhiDevice->unmapStagingTexture(stagingTexture);
 
         nvrhi::TextureDesc destTextureDesc{};
         destTextureDesc.width = image.width;
         destTextureDesc.height = image.height;
         destTextureDesc.format = image.format();
-        auto destTexture = webGpu.nvrhiDevice->createTexture(destTextureDesc);
+        auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
-        auto commandList = webGpu.nvrhiDevice->createCommandList();
+        auto commandList = context.nvrhiDevice->createCommandList();
         nvrhi::TextureSlice destSlice{};
         destSlice.width = image.width;
         destSlice.height = image.height;
 
-        return std::make_unique<CommandExecution>(webGpu,
+        return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
                                                   destSlice,
@@ -138,14 +138,14 @@ struct ResourceSetup : public App {
 struct ImageLoading : public App {
     ImageLoading() = delete;
 
-    ImageLoading(const WebGPU& webGpu)
+    ImageLoading(const Context& webGpu)
         : App(webGpu, "Load image from file") {
     }
 
     AppPtr run() override {
         return std::make_unique<ResourceSetup>(
             Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl.png"),
-            webGpu);
+            context);
     }
 };
 
@@ -162,7 +162,7 @@ int main() {
     wgpu::Queue queue = device.GetQueue();
     nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});;
 
-    WebGPU webGpu(instance, adapter, device, queue, nvrhiDevice);
+    Context webGpu(instance, adapter, device, queue, nvrhiDevice);
 
     AppPtr app = std::make_unique<ImageLoading>(webGpu);
     while (true) {
