@@ -1,11 +1,11 @@
-#include "metal.h"
+#include "webgpu-glfw-util.h"
 #import <QuartzCore/CAMetalLayer.h>
 
 #define GLFW_EXPOSE_NATIVE_COCOA
 
 #include "GLFW/glfw3native.h"
 #include <cstdlib>
-#include "webgpu/webgpu_cpp.h"
+#include <webgpu/webgpu_cpp.h>
 
 std::unique_ptr<wgpu::ChainedStruct, void (*)(wgpu::ChainedStruct*)>
 SetupWindowAndGetSurfaceDescriptorCocoa(GLFWwindow* window) {

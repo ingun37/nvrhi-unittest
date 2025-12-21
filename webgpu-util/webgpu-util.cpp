@@ -1,16 +1,16 @@
 //
-// Created by Ingun Jon on 12/19/25.
+// Created by Ingun Jon on 12/21/25.
 //
+#include "webgpu-util.h"
 #include <iostream>
-#include "util.h"
 
-wgpu::Device create_device(const wgpu::Instance &instance, const wgpu::Adapter &adapter) {
+wgpu::Device create_device(const wgpu::Instance& instance, const wgpu::Adapter& adapter) {
     wgpu::DeviceDescriptor deviceDesc = {};
     deviceDesc.nextInChain = nullptr;
     deviceDesc.SetDeviceLostCallback(
         wgpu::CallbackMode::AllowSpontaneous,
-        [](const wgpu::Device &, wgpu::DeviceLostReason reason, wgpu::StringView message) {
-            const char *reasonName = "";
+        [](const wgpu::Device&, wgpu::DeviceLostReason reason, wgpu::StringView message) {
+            const char* reasonName = "";
             switch (reason) {
                 case wgpu::DeviceLostReason::Unknown:
                     reasonName = "Unknown";
@@ -30,8 +30,8 @@ wgpu::Device create_device(const wgpu::Instance &instance, const wgpu::Adapter &
             std::cerr << "Device lost because of " << reasonName << ": " << message.data;
         });
     deviceDesc.SetUncapturedErrorCallback(
-        [](const wgpu::Device &, wgpu::ErrorType type, wgpu::StringView message) {
-            const char *errorTypeName = "";
+        [](const wgpu::Device&, wgpu::ErrorType type, wgpu::StringView message) {
+            const char* errorTypeName = "";
             switch (type) {
                 case wgpu::ErrorType::Validation:
                     errorTypeName = "Validation";
@@ -56,7 +56,8 @@ wgpu::Device create_device(const wgpu::Instance &instance, const wgpu::Adapter &
     // Synchronously create the device
     instance.WaitAny(
         adapter.RequestDevice(
-            &deviceDesc, wgpu::CallbackMode::WaitAnyOnly,
+            &deviceDesc,
+            wgpu::CallbackMode::WaitAnyOnly,
             [&device](wgpu::RequestDeviceStatus status, wgpu::Device dv, wgpu::StringView message) {
                 if (status != wgpu::RequestDeviceStatus::Success) {
                     std::cerr << "Failed to get an device: " << message.data;
@@ -68,3 +69,4 @@ wgpu::Device create_device(const wgpu::Instance &instance, const wgpu::Adapter &
 
     return device;
 }
+

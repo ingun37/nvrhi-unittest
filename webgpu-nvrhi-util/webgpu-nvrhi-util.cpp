@@ -1,8 +1,7 @@
 //
-// Created by Ingun Jon on 12/19/25.
+// Created by Ingun Jon on 12/21/25.
 //
-
-#include "helper.h"
+#include "webgpu-nvrhi-util.h"
 
 nvrhi::TextureHandle CreateBackBuffer(const nvrhi::DeviceHandle& m_NvrhiDevice, wgpu::Surface m_Surface) {
     wgpu::SurfaceTexture surfaceTexture;

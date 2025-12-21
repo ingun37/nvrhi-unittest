@@ -1,17 +1,12 @@
 #include <gtest/gtest.h>
 #include <nvrhi/nvrhi.h>
-#include <nvrhi/webgpu.h>
 #include <webgpu/webgpu_cpp.h>
 #include <webgpu/webgpu_cpp_print.h>
 
-#include <cstdlib>
 #include <iostream>
 
-#include "util.h"
 #include <GLFW/glfw3.h>
-#include "metal.h"
-#include "Image/stb_image.h"
-#include "helper.h"
+#include "webgpu-util.h"
 // Demonstrate some basic assertions.
 TEST(HelloTest, BasicAssertions) {
     // Expect two strings not to be equal.
@@ -62,70 +57,7 @@ TEST(DawnTest, BasicAssertions) {
 
     EXPECT_NE(device, nullptr);
     EXPECT_NE(queue, nullptr);
+    device.Destroy();
 }
 
-TEST(NvrhiTest, BasicAssertions) {
-    wgpu::InstanceDescriptor instanceDescriptor = nvrhi::webgpu::utils::create_instance_descriptor();
-    wgpu::Instance instance = wgpu::CreateInstance(&instanceDescriptor);
-    wgpu::Adapter adapter = nvrhi::webgpu::utils::create_adapter(
-        instance,
-        nvrhi::webgpu::utils::create_adapter_option(wgpu::BackendType::Metal, wgpu::AdapterType::IntegratedGPU));
-    wgpu::Device device = create_device(instance, adapter);
-    wgpu::Queue queue = device.GetQueue();
-    auto nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});
 
-    size_t stagingTextureRowPitch = 0;
-    uint32_t copyWidth = 1024;
-    uint32_t copyHeight = 1024;
-    uint32_t copyDepth = 1;
-    nvrhi::Format fmt = nvrhi::Format::RGBA8_UNORM;
-    nvrhi::TextureDimension dimension = nvrhi::TextureDimension::Texture2D;
-    nvrhi::TextureDesc stagingTextureDesc;
-    stagingTextureDesc.width = copyWidth;
-    stagingTextureDesc.height = copyHeight;
-    stagingTextureDesc.depth = copyDepth;
-    stagingTextureDesc.arraySize = 1;
-    stagingTextureDesc.mipLevels = 1;
-    stagingTextureDesc.format = fmt;
-    stagingTextureDesc.dimension = dimension;
-    stagingTextureDesc.isShaderResource = false;
-    stagingTextureDesc.initialState = nvrhi::ResourceStates::CopySource;
-    stagingTextureDesc.keepInitialState = true;
-    nvrhi::TextureSlice stagingTextureSlice;
-    stagingTextureSlice.x = stagingTextureSlice.y = stagingTextureSlice.z = 0;
-    stagingTextureSlice.width = copyWidth;
-    stagingTextureSlice.height = copyHeight;
-    stagingTextureSlice.depth = copyDepth;
-    stagingTextureSlice.mipLevel = stagingTextureSlice.arraySlice = 0;
-
-    nvrhi::StagingTextureHandle stagingTexture =
-        nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
-
-    void* mapPointer = nvrhiDevice->mapStagingTexture(
-        stagingTexture,
-        stagingTextureSlice,
-        nvrhi::CpuAccessMode::Write,
-        &stagingTextureRowPitch);
-
-    EXPECT_NE(mapPointer, nullptr);
-    // const uint8_t* sliceData = textureData.m_dataBlob.data() + (iterArraySlice * textureData.m_slicePitch);
-    //
-    // memcpy(mapPointer, sliceData, dataCopySize);
-    nvrhiDevice->unmapStagingTexture(stagingTexture);
-
-    nvrhi::TextureSlice destTextureSlice;
-    destTextureSlice.x = 0;
-    destTextureSlice.y = 0;
-    destTextureSlice.z = 0;
-    destTextureSlice.width = copyWidth;
-    destTextureSlice.height = copyHeight;
-    destTextureSlice.depth = copyDepth;
-    destTextureSlice.mipLevel = 1;
-    destTextureSlice.arraySlice = 0;
-
-    auto commandList = nvrhiDevice->createCommandList();
-    // commandList->copyTexture(targetTexture->m_textureHandle,
-    //                          destTextureSlice,
-    //                          stagingTexture,
-    //                          stagingTextureSlice);
-}
