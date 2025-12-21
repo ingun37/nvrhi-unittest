@@ -98,7 +98,17 @@ target_link_libraries(
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu
-        glfw
+        "-framework Metal"
+        "-framework QuartzCore"
+)
+
+find_package(Vulkan REQUIRED MoltenVK)
+
+add_executable(cli_vulkan cli_vulkan.cpp cli_app.h)
+
+target_link_libraries(
+        cli_vulkan
+        nvrhi
         "-framework Metal"
         "-framework QuartzCore"
 )
