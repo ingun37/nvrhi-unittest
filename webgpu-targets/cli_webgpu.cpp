@@ -6,7 +6,7 @@
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/webgpu.h>
 #include <webgpu-util.h>
-#include "cli_app.h"
+#include "../cli_app.h"
 
 
 int main() {

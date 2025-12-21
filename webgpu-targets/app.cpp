@@ -9,7 +9,7 @@
 #include <GLFW/glfw3.h>
 #include "webgpu-util.h"
 #include "webgpu-glfw-util.h"
-#include "webgpu-glfw-util/webgpu-glfw-util.h"
+#include "../webgpu-glfw-util/webgpu-glfw-util.h"
 
 int main() {
     GLFWwindow* window;
