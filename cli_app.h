@@ -8,8 +8,13 @@
 #include <string>
 #include <utility>
 #include <nvrhi/nvrhi.h>
-#include "helper.h"
 #include <memory>
+#include <Image.h>
+
+nvrhi::Format format(const Image& img) {
+    if (img.channel == 4) return nvrhi::Format::RGBA8_UNORM;
+    throw std::runtime_error("invalid image channel");
+}
 
 struct Context {
     nvrhi::DeviceHandle nvrhiDevice;
@@ -87,7 +92,7 @@ struct ResourceSetup : public App {
         nvrhi::TextureDesc stagingTextureDesc{};
         stagingTextureDesc.width = image.width;
         stagingTextureDesc.height = image.height;
-        stagingTextureDesc.format = image.format();
+        stagingTextureDesc.format = format(image);
         auto stagingTexture = context.nvrhiDevice->
             createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
         nvrhi::TextureSlice stagingTextureSlice{};
@@ -105,7 +110,7 @@ struct ResourceSetup : public App {
         nvrhi::TextureDesc destTextureDesc{};
         destTextureDesc.width = image.width;
         destTextureDesc.height = image.height;
-        destTextureDesc.format = image.format();
+        destTextureDesc.format = format(image);
         auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
         auto commandList = context.nvrhiDevice->createCommandList();

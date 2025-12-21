@@ -42,7 +42,6 @@ add_executable(nvrhi_unit_test main.cpp
         util.h
         metal.mm
         metal.h
-        stb_image.h
         helper.cpp
         helper.h
 )
@@ -68,7 +67,6 @@ add_executable(app app.cpp
         util.h
         metal.mm
         metal.h
-        stb_image.h
         helper.cpp
         helper.h
 )
@@ -83,14 +81,10 @@ target_link_libraries(
         "-framework QuartzCore"
 )
 
+add_subdirectory(Image)
 add_executable(cli_webgpu cli_webgpu.cpp cli_app.h
         util.cpp
         util.h
-        metal.mm
-        metal.h
-        stb_image.h
-        helper.cpp
-        helper.h
 )
 
 target_link_libraries(
@@ -98,8 +92,7 @@ target_link_libraries(
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu
-        "-framework Metal"
-        "-framework QuartzCore"
+        Image
 )
 
 find_package(Vulkan REQUIRED MoltenVK)

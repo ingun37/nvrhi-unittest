@@ -10,7 +10,7 @@
 #include "util.h"
 #include <GLFW/glfw3.h>
 #include "metal.h"
-#include "stb_image.h"
+#include "Image/stb_image.h"
 #include "helper.h"
 // Demonstrate some basic assertions.
 TEST(HelloTest, BasicAssertions) {
