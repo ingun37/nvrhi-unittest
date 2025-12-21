@@ -13,24 +13,13 @@
 #include <memory>
 
 struct Context {
-    wgpu::Instance instance;
-    wgpu::Adapter adapter;
-    wgpu::Device device;
-    wgpu::Queue queue;
     nvrhi::DeviceHandle nvrhiDevice;
 
     Context() = delete;
 
-    Context(wgpu::Instance instance,
-           wgpu::Adapter adapter,
-           wgpu::Device device,
-           wgpu::Queue queue,
-           nvrhi::DeviceHandle nvrhiDevice)
-        : instance(std::move(instance)),
-          adapter(std::move(adapter)),
-          device(std::move(device)),
-          queue(std::move(queue)),
-          nvrhiDevice(std::move(nvrhiDevice)) {
+    Context(
+        nvrhi::DeviceHandle nvrhiDevice)
+        : nvrhiDevice(std::move(nvrhiDevice)) {
     }
 };
 
@@ -100,15 +89,16 @@ struct ResourceSetup : public App {
         stagingTextureDesc.width = image.width;
         stagingTextureDesc.height = image.height;
         stagingTextureDesc.format = image.format();
-        auto stagingTexture = context.nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
+        auto stagingTexture = context.nvrhiDevice->
+            createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
         nvrhi::TextureSlice stagingTextureSlice{};
         stagingTextureSlice.width = image.width;
         stagingTextureSlice.height = image.height;
         size_t pitch;
         auto mapPtr = context.nvrhiDevice->mapStagingTexture(stagingTexture,
-                                                            stagingTextureSlice,
-                                                            nvrhi::CpuAccessMode::Write,
-                                                            &pitch);
+                                                             stagingTextureSlice,
+                                                             nvrhi::CpuAccessMode::Write,
+                                                             &pitch);
         memcpy(mapPtr, image.data.data(), image.data.size());
 
         context.nvrhiDevice->unmapStagingTexture(stagingTexture);
@@ -162,7 +152,7 @@ int main() {
     wgpu::Queue queue = device.GetQueue();
     nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});;
 
-    Context webGpu(instance, adapter, device, queue, nvrhiDevice);
+    Context webGpu(nvrhiDevice);
 
     AppPtr app = std::make_unique<ImageLoading>(webGpu);
     while (true) {
