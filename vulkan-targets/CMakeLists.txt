@@ -3,7 +3,6 @@ set(NVRHI_BUILD_SHARED ON CACHE BOOL "Build as a shared library" FORCE)
 
 find_package(Vulkan REQUIRED
         MoltenVK
-        #        volk
 )
 
 
@@ -13,10 +12,9 @@ add_executable(cli_vulkan cli_vulkan.cpp ../cli_app.h)
 
 target_link_libraries(cli_vulkan
         nvrhi
-        #        nvrhi_vk
         Vulkan::Vulkan
         Vulkan::MoltenVK
-        #        Vulkan::volk
+        Image
 )
 get_filename_component(MOLTENVK_LIB_DIR "${Vulkan_MoltenVK_LIBRARY}" DIRECTORY)
 # Set RPATH for build dependencies on macOS

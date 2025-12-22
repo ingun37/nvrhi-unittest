@@ -6,6 +6,7 @@
 // #include "volk.h"
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/vulkan.h>
+#include "../cli_app.h"
 
 struct QueueFamilyIndices {
     uint32_t graphicsFamily;
@@ -147,9 +148,10 @@ int main() {
 #endif
     // deviceDesc.vulkanLibraryName = m_DeviceParams.vulkanLibraryName;
     // deviceDesc.logBufferLifetime = m_DeviceParams.logBufferLifetime;
-    auto m_NvrhiDevice = nvrhi::vulkan::createDevice(deviceDesc);
+    auto nvrhiDevice = nvrhi::vulkan::createDevice(deviceDesc);
 
-    std::cout << "Hello Vulkan!" << std::endl;
+    run_app(Context(nvrhiDevice));
+
     vkDestroyDevice(device, nullptr);
 
     vkDestroyInstance(instance, nullptr);
