@@ -82,10 +82,12 @@ struct CommandExecution : public App {
 
 struct ResourceSetup : public App {
     Image image;
+float widthRatio;
 
-    ResourceSetup(Image image, const Context& webGPU)
+    ResourceSetup(Image image, const Context& webGPU, float widthRatio)
         : App(webGPU, "Set up textuere reosurces and copy image to staged buffer"),
-          image(std::move(image)) {
+          image(std::move(image)),
+          widthRatio(widthRatio) {
     }
 
     AppPtr run() override {
@@ -107,27 +109,28 @@ struct ResourceSetup : public App {
 
         context.nvrhiDevice->unmapStagingTexture(stagingTexture);
 
+        uint32_t width = static_cast<uint32_t>(image.width * widthRatio);
         nvrhi::TextureDesc destTextureDesc{};
-        destTextureDesc.width = image.width;
+        destTextureDesc.width = width;
         destTextureDesc.height = image.height;
         destTextureDesc.format = format(image);
         auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
         auto commandList = context.nvrhiDevice->createCommandList();
         nvrhi::TextureSlice destSlice{};
-        destSlice.width = image.width;
+        destSlice.width = width;
         destSlice.height = image.height;
-
+        nvrhi::TextureSlice srcTextureSlice{};
+        srcTextureSlice.width = width;
+        srcTextureSlice.height = image.height;
         return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
                                                   destSlice,
                                                   stagingTexture,
-                                                  stagingTextureSlice);
+                                                  srcTextureSlice);
     }
 };
-
-;
 
 struct ImageLoading : public App {
     ImageLoading() = delete;
@@ -139,7 +142,8 @@ struct ImageLoading : public App {
     AppPtr run() override {
         return std::make_unique<ResourceSetup>(
             Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl.png"),
-            context);
+            context,
+            0.5f);
     }
 };
 
