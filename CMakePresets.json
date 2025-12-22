@@ -1,0 +1,45 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 0,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "webgpu",
+      "binaryDir": "${sourceDir}/cmake-build-webgpu",
+      "cacheVariables": {
+        "Dawn_DIR": "/Users/ingun/CLionProjects/nvrhi-unit-test/dawn/install/Release/lib/cmake/Dawn",
+        "NVRHI_WITH_VULKAN": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "NVRHI_WITH_WEBGPU": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "vulkan",
+      "binaryDir": "${sourceDir}/cmake-build-vulkan",
+      "cacheVariables": {
+        "NVRHI_WITH_VULKAN": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "NVRHI_WITH_WEBGPU": {
+          "type": "BOOL",
+          "value": "OFF"
+        }
+      }
+    },
+    {
+      "name": "xcode-webgpu",
+      "generator": "Xcode",
+      "inherits": "webgpu",
+      "binaryDir": "${sourceDir}/cmake-build-xcode"
+    }
+  ]
+}

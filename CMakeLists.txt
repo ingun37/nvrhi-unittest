@@ -4,14 +4,12 @@ project(nvrhi_unit_test)
 set(CMAKE_CXX_STANDARD 23)
 
 include(FetchContent)
-find_package(Threads)
 
-find_package(Dawn REQUIRED)
 find_package(glfw3 REQUIRED)
 
 # Configure NVRHI settings before FetchContent (correct approach)
-set(NVRHI_WITH_VULKAN OFF CACHE BOOL "Enable Vulkan Backend" FORCE)
-set(NVRHI_WITH_WEBGPU ON CACHE BOOL "Enable WebGPU Backend" FORCE)
+set(NVRHI_WITH_VULKAN OFF CACHE BOOL "Enable Vulkan Backend")
+set(NVRHI_WITH_WEBGPU ON CACHE BOOL "Enable WebGPU Backend")
 set(NVRHI_WITH_DX11 OFF CACHE BOOL "Disable DX11 Backend" FORCE)
 set(NVRHI_WITH_DX12 OFF CACHE BOOL "Disable DX12 Backend" FORCE)
 set(NVRHI_BUILD_SHARED OFF CACHE BOOL "Build as a shared library" FORCE)
@@ -26,7 +24,6 @@ FetchContent_Declare(
         #        GIT_TAG 7b92100074c99cc5e3abbeb3fbdd9f2beabbe778
         SOURCE_DIR /Users/ingun/projects/NVRHI
 )
-FetchContent_MakeAvailable(nvrhi)
 
 FetchContent_Declare(
         googletest
@@ -43,12 +40,6 @@ include(GoogleTest)
 
 if (NVRHI_WITH_WEBGPU)
     add_subdirectory(webgpu-targets)
+elseif (NVRHI_WITH_VULKAN)
+    add_subdirectory(vulkan-targets)
 endif ()
-
-find_package(Vulkan REQUIRED MoltenVK)
-
-add_executable(cli_vulkan cli_vulkan.cpp cli_app.h)
-
-target_link_libraries(cli_vulkan
-        nvrhi
-)

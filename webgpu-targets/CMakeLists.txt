@@ -1,3 +1,8 @@
+find_package(Threads)
+find_package(Dawn REQUIRED)
+
+FetchContent_MakeAvailable(nvrhi)
+
 add_subdirectory(webgpu-util)
 add_subdirectory(webgpu-glfw-util)
 add_subdirectory(webgpu-nvrhi-util)
