@@ -21,6 +21,6 @@ this part in the `vulkan-backend.h` from NVRHI repo
 
 In Xcode,
 
-1. Edit Scheme
-2. Run -> Options
-3. Set GPU Frame Capture to Metal
+1. Go to *Edit Scheme -> Run -> Options*
+2. Set *GPU Frame Capture* to `Metal`
+3. (Maybe unnecessary) Go to *Build Setting* and set *Metal Capture Enabled* to `YES`
