@@ -18,7 +18,8 @@
         "NVRHI_WITH_WEBGPU": {
           "type": "BOOL",
           "value": "ON"
-        }
+        },
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -32,7 +33,8 @@
         "NVRHI_WITH_WEBGPU": {
           "type": "BOOL",
           "value": "OFF"
-        }
+        },
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {

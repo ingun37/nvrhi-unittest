@@ -82,12 +82,16 @@ struct CommandExecution : public App {
 
 struct ResourceSetup : public App {
     Image image;
-float widthRatio;
+    float widthRatio;
+    float heightRatio;
+    uint32_t dest_x;
 
-    ResourceSetup(Image image, const Context& webGPU, float widthRatio)
+    ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x, float widthRatio, float heightRatio)
         : App(webGPU, "Set up textuere reosurces and copy image to staged buffer"),
           image(std::move(image)),
-          widthRatio(widthRatio) {
+          dest_x(dest_x),
+          widthRatio(widthRatio),
+          heightRatio(heightRatio) {
     }
 
     AppPtr run() override {
@@ -101,28 +105,35 @@ float widthRatio;
         stagingTextureSlice.width = image.width;
         stagingTextureSlice.height = image.height;
         size_t pitch;
-        auto mapPtr = context.nvrhiDevice->mapStagingTexture(stagingTexture,
-                                                             stagingTextureSlice,
-                                                             nvrhi::CpuAccessMode::Write,
-                                                             &pitch);
-        memcpy(mapPtr, image.data.data(), image.data.size());
+        const uint32_t actualRowSize = image.data.size() / image.height;
+        auto mapPtr = static_cast<uint8_t*>(context.nvrhiDevice->mapStagingTexture(stagingTexture,
+            stagingTextureSlice,
+            nvrhi::CpuAccessMode::Write,
+            &pitch));
+        for (int i = 0; i < image.height; ++i) {
+            memcpy(mapPtr + (i * pitch),
+                   image.data.data() + (i * actualRowSize),
+                   actualRowSize);
+        }
 
         context.nvrhiDevice->unmapStagingTexture(stagingTexture);
 
         uint32_t width = static_cast<uint32_t>(image.width * widthRatio);
+        uint32_t height = static_cast<uint32_t>(image.height * heightRatio);
         nvrhi::TextureDesc destTextureDesc{};
-        destTextureDesc.width = width;
-        destTextureDesc.height = image.height;
+        destTextureDesc.width = image.width * 2;
+        destTextureDesc.height = image.height * 2;
         destTextureDesc.format = format(image);
         auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
         auto commandList = context.nvrhiDevice->createCommandList();
         nvrhi::TextureSlice destSlice{};
+        destSlice.x = dest_x;
         destSlice.width = width;
-        destSlice.height = image.height;
+        destSlice.height = height;
         nvrhi::TextureSlice srcTextureSlice{};
         srcTextureSlice.width = width;
-        srcTextureSlice.height = image.height;
+        srcTextureSlice.height = height;
         return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
@@ -141,8 +152,10 @@ struct ImageLoading : public App {
 
     AppPtr run() override {
         return std::make_unique<ResourceSetup>(
-            Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl.png"),
+            Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png"),
             context,
+            256,
+            0.5f,
             0.5f);
     }
 };
