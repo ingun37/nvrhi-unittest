@@ -1,3 +1,5 @@
+set(NVRHI_BUILD_SHARED OFF CACHE BOOL "Build as a shared library" FORCE)
+
 find_package(Threads)
 find_package(Dawn REQUIRED)
 
