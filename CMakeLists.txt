@@ -13,7 +13,7 @@ set(NVRHI_WITH_WEBGPU ON CACHE BOOL "Enable WebGPU Backend")
 set(NVRHI_WITH_DX11 OFF CACHE BOOL "Disable DX11 Backend" FORCE)
 set(NVRHI_WITH_DX12 OFF CACHE BOOL "Disable DX12 Backend" FORCE)
 set(NVRHI_WITH_VALIDATION OFF CACHE BOOL "Disable NVRHI Validation Layer" FORCE)
-
+set(NVRHI_BUILD_SHARED OFF CACHE BOOL "Build as a shared library" FORCE)
 set(NVRHI_GIT_URL "https://github.com/clo3d/NVRHI.git" CACHE STRING "NVRHI Git repository URL")
 
 # FetchContent declaration without CMAKE_ARGS

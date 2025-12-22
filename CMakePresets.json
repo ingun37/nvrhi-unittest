@@ -39,7 +39,13 @@
       "name": "xcode-webgpu",
       "generator": "Xcode",
       "inherits": "webgpu",
-      "binaryDir": "${sourceDir}/cmake-build-xcode"
+      "binaryDir": "${sourceDir}/cmake-build-xcode-webgpu"
+    },
+    {
+      "name": "xcode-vulkan",
+      "generator": "Xcode",
+      "inherits": "vulkan",
+      "binaryDir": "${sourceDir}/cmake-build-xcode-vulkan"
     }
   ]
 }
