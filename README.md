@@ -11,7 +11,7 @@ Set Dawn_DIR to the `{project root}/dawn/install/Release/lib/cmake/Dawn`
 
 ## Enable Metal debugger for MoltenVK backend build
 
-Comment out (maybe unnecessary)
+Comment out
 
 ```c++
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
