@@ -10,7 +10,7 @@
       "name": "webgpu",
       "binaryDir": "${sourceDir}/cmake-build-webgpu",
       "cacheVariables": {
-        "Dawn_DIR": "/Users/ingun/CLionProjects/nvrhi-unit-test/dawn/install/Release/lib/cmake/Dawn",
+        "Dawn_DIR": "/Users/ingun/projects/dawn/install/Release/lib/cmake/Dawn",
         "NVRHI_WITH_VULKAN": {
           "type": "BOOL",
           "value": "OFF"
