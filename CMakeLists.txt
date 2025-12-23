@@ -36,7 +36,7 @@ enable_testing()
 add_subdirectory(Image)
 
 include(GoogleTest)
-
+add_subdirectory(shaders)
 if (NVRHI_WITH_WEBGPU)
     add_subdirectory(webgpu-targets)
 elseif (NVRHI_WITH_VULKAN)
