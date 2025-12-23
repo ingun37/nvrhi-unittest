@@ -198,10 +198,6 @@ int main() {
     GetDevice()->executeCommandList(m_CommandList);
 
     glfwMakeContextCurrent(window);
-
-    auto backBuffer = CreateBackBuffer(nvrhiDevice, surface);
-    auto framebuffer = GetDevice()->createFramebuffer(
-        nvrhi::FramebufferDesc().addColorAttachment(backBuffer));
     auto samplerDesc = nvrhi::SamplerDesc()
         .setAllFilters(false)
         .setAllAddressModes(nvrhi::SamplerAddressMode::Clamp);
@@ -246,9 +242,13 @@ int main() {
     psoDesc.bindingLayouts = {m_BindingLayout};
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     psoDesc.renderState.depthStencilState.depthTestEnable = false;
-    psoDesc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
+    psoDesc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::Back;
 
-    auto m_Pipeline = GetDevice()->createGraphicsPipeline(psoDesc, framebuffer);
+    auto initial_backBuffer = CreateBackBuffer(nvrhiDevice, surface);
+    auto initial_framebuffer = GetDevice()->createFramebuffer(
+        nvrhi::FramebufferDesc().addColorAttachment(initial_backBuffer));
+
+    auto m_Pipeline = GetDevice()->createGraphicsPipeline(psoDesc, initial_framebuffer);
     float m_Rotation = 0.f;
 
     /* Loop until the user closes the window */
@@ -283,6 +283,11 @@ int main() {
             {m_VertexBuffer, 0, offsetof(Vertex, position)}
         };
         state.pipeline = m_Pipeline;
+
+        auto backBuffer = CreateBackBuffer(nvrhiDevice, surface);
+        auto framebuffer = GetDevice()->createFramebuffer(
+            nvrhi::FramebufferDesc().addColorAttachment(backBuffer));
+
         state.framebuffer = framebuffer;
 
         // Construct the viewport so that all viewports form a grid.
@@ -308,6 +313,7 @@ int main() {
         if (presentStatus != wgpu::Status::Success) throw std::runtime_error("Failed to present swap chain");
         /* Poll for and process events */
         glfwPollEvents();
+        m_Rotation += 0.01f;
     }
 
     glfwTerminate();
