@@ -34,6 +34,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_subdirectory(Image)
+add_subdirectory(my_math)
 
 include(GoogleTest)
 add_subdirectory(shaders)

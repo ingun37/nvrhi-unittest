@@ -27,6 +27,7 @@ add_executable(glfw_app glfw_app.cpp)
 
 target_link_libraries(
         glfw_app
+        my_math
         webgpu_util
         webgpu_glfw_util
         webgpu_nvrhi_util
@@ -36,6 +37,7 @@ target_link_libraries(
         glfw
 )
 
+add_dependencies(glfw_app shaders)
 
 add_executable(cli_webgpu cli_webgpu.cpp ../cli_app.h)
 

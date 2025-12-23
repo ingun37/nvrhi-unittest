@@ -13,13 +13,10 @@
 #include <fstream>
 #include <ranges>
 
-namespace math {
-using float3 = std::array<float, 3>;
-using float2 = std::array<float, 2>;
-using float4x4 = std::array<float, 16>;
-}
+#include "my_math.h"
 
-namespace dm = math;
+namespace dm = donut::math;
+namespace math = donut::math;
 
 struct Vertex {
     math::float3 position;
@@ -64,6 +61,14 @@ static const Vertex g_Vertices[] = {
     {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
     {{0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
     {{-0.5f, -0.5f, 0.5f}, {0.0f, 1.0f}},
+};
+constexpr uint32_t c_NumViews = 4;
+
+static const math::float3 g_RotationAxes[c_NumViews] = {
+    math::float3(1.f, 0.f, 0.f),
+    math::float3(0.f, 1.f, 0.f),
+    math::float3(0.f, 0.f, 1.f),
+    math::float3(1.f, 1.f, 1.f),
 };
 
 namespace nvrhi {
@@ -193,6 +198,7 @@ int main() {
     GetDevice()->executeCommandList(m_CommandList);
 
     glfwMakeContextCurrent(window);
+
     auto backBuffer = CreateBackBuffer(nvrhiDevice, surface);
     auto framebuffer = GetDevice()->createFramebuffer(
         nvrhi::FramebufferDesc().addColorAttachment(backBuffer));
@@ -240,8 +246,11 @@ int main() {
     psoDesc.bindingLayouts = {m_BindingLayout};
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     psoDesc.renderState.depthStencilState.depthTestEnable = false;
+    psoDesc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
 
     auto m_Pipeline = GetDevice()->createGraphicsPipeline(psoDesc, framebuffer);
+    float m_Rotation = 0.f;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -250,11 +259,17 @@ int main() {
 
         // Fill out the constant buffer slices for multiple views of the model.
         ConstantBufferEntry modelConstants[1];
-        for (uint32_t viewIndex = 0; viewIndex < 1; ++viewIndex) {
-            math::float4x4 viewProjMatrix;
-            modelConstants[viewIndex].viewProjMatrix = viewProjMatrix;
-        }
+        const int viewIndex = 0;
 
+        math::affine3 viewMatrix = math::rotation(normalize(g_RotationAxes[viewIndex]), m_Rotation)
+                                   * math::yawPitchRoll(0.f, math::radians(-30.f), 0.f)
+                                   * math::translation(math::float3(0, 0, 2));
+        math::float4x4 projMatrix = math::perspProjD3DStyle(math::radians(60.f),
+                                                            float(width) / float(height),
+                                                            0.1f,
+                                                            10.f);
+        math::float4x4 viewProjMatrix = math::affineToHomogeneous(viewMatrix) * projMatrix;
+        modelConstants[viewIndex].viewProjMatrix = viewProjMatrix;
         // Upload all constant buffer slices at once.
         m_CommandList->writeBuffer(m_ConstantBuffer, modelConstants, sizeof(modelConstants));
 

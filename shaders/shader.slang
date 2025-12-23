@@ -49,7 +49,7 @@ VertexStageOutput vertexMain(
     float2 uv    = assembledVertex.uv;
 
     output.coarseVertex.uv = uv;
-    output.sv_position = float4(position, 1.0);
+    output.sv_position = mul(modelViewProjection, float4(position, 1.0));
 
     return output;
 }
