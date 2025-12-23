@@ -87,8 +87,8 @@ struct CommandExecution : public App {
         destSlice.width = width;
         destSlice.height = height;
         nvrhi::TextureSlice srcTextureSlice{};
-        srcTextureSlice.width = width;
-        srcTextureSlice.height = height;
+        srcTextureSlice.width = original_width;
+        srcTextureSlice.height = original_height;
 
         commandList->open();
         commandList->copyTexture(destTexture, destSlice, stagingTexture, srcTextureSlice);
@@ -104,16 +104,12 @@ struct CommandExecution : public App {
 
 struct ResourceSetup : public App {
     Image image;
-    float widthRatio;
-    float heightRatio;
     uint32_t dest_x;
 
-    ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x, float widthRatio, float heightRatio)
+    ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x)
         : App(webGPU, "Set up textuere reosurces and copy image to staged buffer"),
           image(std::move(image)),
-          dest_x(dest_x),
-          widthRatio(widthRatio),
-          heightRatio(heightRatio) {
+          dest_x(dest_x) {
     }
 
     AppPtr run() override {
@@ -166,9 +162,7 @@ struct ImageLoading : public App {
         return std::make_unique<ResourceSetup>(
             Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png"),
             context,
-            256,
-            0.5f,
-            0.5f);
+            256);
     }
 };
 
