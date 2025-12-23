@@ -9,6 +9,7 @@
 #include <utility>
 #include <nvrhi/nvrhi.h>
 #include <memory>
+#include <sstream>
 #include <Image.h>
 
 nvrhi::Format format(const Image& img) {
@@ -46,37 +47,58 @@ using AppPtr = std::unique_ptr<App>;
 struct CommandExecution : public App {
     nvrhi::CommandListHandle commandList;
     nvrhi::TextureHandle destTexture;
-    nvrhi::TextureSlice destSlice;
     nvrhi::StagingTextureHandle stagingTexture;
-    nvrhi::TextureSlice stagingTextureSlice;
 
     CommandExecution() = delete;
 
     CommandExecution(const Context& webGPU,
                      nvrhi::CommandListHandle commandList,
                      nvrhi::TextureHandle destTexture,
-                     const nvrhi::TextureSlice& destSlice,
-                     nvrhi::StagingTextureHandle stagingTexture,
-                     const nvrhi::TextureSlice& stagingTextureSlice)
+                     nvrhi::StagingTextureHandle stagingTexture)
         : App(webGPU, "Execute command to copy staged buffer to texture"),
           commandList(std::move(commandList)),
           destTexture(std::move(destTexture)),
-          destSlice(destSlice),
-          stagingTexture(std::move(stagingTexture)),
-          stagingTextureSlice(stagingTextureSlice) {
+          stagingTexture(std::move(stagingTexture)) {
     }
 
     AppPtr run() override {
+        std::cout << "Enter width_ratio and height_ratio (space-separated, default: 0.5 0.5): ";
+        std::string input;
+        std::getline(std::cin, input);
+
+        float width_ratio = 0.5f;
+        float height_ratio = 0.5f;
+
+        if (!input.empty()) {
+            std::istringstream iss(input);
+            float temp_width, temp_height;
+            if (iss >> temp_width >> temp_height) {
+                width_ratio = temp_width;
+                height_ratio = temp_height;
+            }
+        }
+
+        uint32_t original_width = stagingTexture->getDesc().width;
+        uint32_t original_height = stagingTexture->getDesc().height;
+        uint32_t width = static_cast<uint32_t>(original_width * width_ratio);
+        uint32_t height = static_cast<uint32_t>(original_height * height_ratio);
+        nvrhi::TextureSlice destSlice{};
+        destSlice.x = 0;
+        destSlice.width = width;
+        destSlice.height = height;
+        nvrhi::TextureSlice srcTextureSlice{};
+        srcTextureSlice.width = width;
+        srcTextureSlice.height = height;
+
         commandList->open();
-        commandList->copyTexture(destTexture, destSlice, stagingTexture, stagingTextureSlice);
+        commandList->copyTexture(destTexture, destSlice, stagingTexture, srcTextureSlice);
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
         return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
-                                                  destSlice,
-                                                  stagingTexture,
-                                                  stagingTextureSlice);
+                                                  stagingTexture
+            );
     }
 };
 
@@ -117,9 +139,6 @@ struct ResourceSetup : public App {
         }
 
         context.nvrhiDevice->unmapStagingTexture(stagingTexture);
-
-        uint32_t width = static_cast<uint32_t>(image.width * widthRatio);
-        uint32_t height = static_cast<uint32_t>(image.height * heightRatio);
         nvrhi::TextureDesc destTextureDesc{};
         destTextureDesc.width = image.width * 2;
         destTextureDesc.height = image.height * 2;
@@ -127,19 +146,12 @@ struct ResourceSetup : public App {
         auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
         auto commandList = context.nvrhiDevice->createCommandList();
-        nvrhi::TextureSlice destSlice{};
-        destSlice.x = dest_x;
-        destSlice.width = width;
-        destSlice.height = height;
-        nvrhi::TextureSlice srcTextureSlice{};
-        srcTextureSlice.width = width;
-        srcTextureSlice.height = height;
+
         return std::make_unique<CommandExecution>(context,
                                                   commandList,
                                                   destTexture,
-                                                  destSlice,
-                                                  stagingTexture,
-                                                  srcTextureSlice);
+                                                  stagingTexture
+            );
     }
 };
 
