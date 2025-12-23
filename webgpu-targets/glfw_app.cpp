@@ -304,7 +304,8 @@ int main() {
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
-
+        wgpu::Status presentStatus = surface.Present();
+        if (presentStatus != wgpu::Status::Success) throw std::runtime_error("Failed to present swap chain");
         /* Poll for and process events */
         glfwPollEvents();
     }
