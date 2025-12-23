@@ -173,10 +173,40 @@ struct ImageLoading : public App {
     }
 };
 
-void run_app(Context&& webGpu) {
+struct Triangle : public App {
+    Triangle() = delete;
+
+    Triangle(Context&& webGpu)
+        : App(std::move(webGpu), "Triangle") {
+    }
+
+    nvrhi::BufferDesc CreateStaticConstantBufferDesc(
+        uint32_t byteSize,
+        const char* debugName) {
+        nvrhi::BufferDesc constantBufferDesc;
+        constantBufferDesc.byteSize = byteSize;
+        constantBufferDesc.debugName = debugName;
+        constantBufferDesc.isConstantBuffer = true;
+        constantBufferDesc.isVolatile = false;
+        return constantBufferDesc;
+    }
+
+    AppPtr run() override {
+        return std::make_unique<Triangle>(*this);
+    }
+};
+
+enum struct Scenario {
+    COPY_STAGING_TO_TEXTURE,
+    TRIANGLE
+};
+
+void run_app(Context&& webGpu, Scenario scenario) {
     std::string input;
 
-    AppPtr app = std::make_unique<ImageLoading>(webGpu);
+    AppPtr app = scenario == Scenario::COPY_STAGING_TO_TEXTURE
+                     ? std::make_unique<ImageLoading>(webGpu)
+                     : std::make_unique<ImageLoading>(webGpu);
     while (true) {
         std::cout << "Enter to:" << app->title << std::endl;
         std::getline(std::cin, input);

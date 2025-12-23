@@ -8,9 +8,11 @@ find_package(Vulkan COMPONENTS
 
 FetchContent_MakeAvailable(nvrhi)
 
-add_executable(cli_vulkan cli_vulkan.cpp ../cli_app.h)
+add_executable(cli_vulkan cli_vulkan.cpp)
 
 target_link_libraries(cli_vulkan
+
+        scenario
         nvrhi
         nvrhi_vk
         Vulkan::Vulkan

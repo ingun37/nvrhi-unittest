@@ -6,7 +6,7 @@
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/webgpu.h>
 #include <webgpu-util.h>
-#include "../cli_app.h"
+#include "scenario.h"
 
 
 int main() {
@@ -20,7 +20,7 @@ int main() {
     wgpu::Queue queue = device.GetQueue();
     nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});;
 
-    run_app(Context(nvrhiDevice));
+    run_app(Context(nvrhiDevice), Scenario::COPY_STAGING_TO_TEXTURE);
 
     return 0;
 }

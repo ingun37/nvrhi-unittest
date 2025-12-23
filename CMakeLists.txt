@@ -35,6 +35,7 @@ enable_testing()
 
 add_subdirectory(Image)
 add_subdirectory(my_math)
+add_subdirectory(scenario)
 
 include(GoogleTest)
 add_subdirectory(shaders)

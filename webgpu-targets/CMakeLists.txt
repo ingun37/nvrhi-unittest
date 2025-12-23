@@ -39,10 +39,10 @@ target_link_libraries(
 
 add_dependencies(glfw_app shaders)
 
-add_executable(cli_webgpu cli_webgpu.cpp ../cli_app.h)
+add_executable(cli_webgpu cli_webgpu.cpp)
 
-target_link_libraries(
-        cli_webgpu
+target_link_libraries(cli_webgpu
+        scenario
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu
