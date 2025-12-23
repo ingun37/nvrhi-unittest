@@ -23,12 +23,13 @@ target_link_libraries(
 
 gtest_discover_tests(nvrhi_unit_test)
 
-add_executable(app app.cpp)
+add_executable(glfw_app glfw_app.cpp)
 
 target_link_libraries(
-        app
+        glfw_app
         webgpu_util
         webgpu_glfw_util
+        webgpu_nvrhi_util
         dawn::webgpu_dawn
         nvrhi
         nvrhi_webgpu

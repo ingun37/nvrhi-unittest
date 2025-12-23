@@ -9,7 +9,7 @@ nvrhi::TextureHandle CreateBackBuffer(const nvrhi::DeviceHandle& m_NvrhiDevice, 
     nvrhi::TextureDesc desc;
     desc.width = surfaceTexture.texture.GetWidth();
     desc.height = surfaceTexture.texture.GetHeight();
-    desc.format = nvrhi::Format::RGBA8_UNORM;
+    desc.format = nvrhi::Format::BGRA8_UNORM;
     desc.mipLevels = 1;
     desc.arraySize = 1;
     desc.sampleCount = 1;
