@@ -62,34 +62,41 @@ struct CommandExecution : public App {
     }
 
     AppPtr run() override {
-        std::cout << "Enter width_ratio and height_ratio (space-separated, default: 0.5 0.5): ";
+        std::cout <<
+            "Enter destination offset_x, offset_y, width_ratio, and height_ratio (space-separated, default: 0 0 0.5 0.5): ";
         std::string input;
         std::getline(std::cin, input);
-
-        float width_ratio = 0.5f;
-        float height_ratio = 0.5f;
+        uint32_t dst_offset_x = 0;
+        uint32_t dst_offset_y = 0;
+        float dst_width_ratio = 0.5f;
+        float dst_height_ratio = 0.5f;
 
         if (!input.empty()) {
             std::istringstream iss(input);
+            uint32_t temp_ox, temp_oy;
             float temp_width, temp_height;
-            if (iss >> temp_width >> temp_height) {
-                width_ratio = temp_width;
-                height_ratio = temp_height;
+            if (iss >> temp_ox >> temp_oy >> temp_width >> temp_height) {
+                dst_offset_x = temp_ox;
+                dst_offset_y = temp_oy;
+                dst_width_ratio = temp_width;
+                dst_height_ratio = temp_height;
             }
         }
 
         uint32_t original_width = stagingTexture->getDesc().width;
         uint32_t original_height = stagingTexture->getDesc().height;
-        uint32_t width = static_cast<uint32_t>(original_width * width_ratio);
-        uint32_t height = static_cast<uint32_t>(original_height * height_ratio);
         nvrhi::TextureSlice destSlice{};
-        destSlice.x = 0;
-        destSlice.width = width;
-        destSlice.height = height;
+        destSlice.x = dst_offset_x;
+        destSlice.y = dst_offset_y;
+        destSlice.width = static_cast<uint32_t>(original_width * dst_width_ratio);
+        destSlice.height = static_cast<uint32_t>(original_height * dst_height_ratio);
+        destSlice.depth = 1;
         nvrhi::TextureSlice srcTextureSlice{};
+        srcTextureSlice.x = 0;
+        srcTextureSlice.y = 0;
         srcTextureSlice.width = original_width;
         srcTextureSlice.height = original_height;
-
+        srcTextureSlice.depth = 1;
         commandList->open();
         commandList->copyTexture(destTexture, destSlice, stagingTexture, srcTextureSlice);
         commandList->close();
