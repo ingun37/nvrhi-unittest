@@ -1,4 +1,5 @@
-Follow [Dawn CMake Quickstart](https://dawn.googlesource.com/dawn/+/refs/heads/main/docs/quickstart-cmake.md)
+Clone Dawn somewhere and
+follow [Dawn CMake Quickstart](https://dawn.googlesource.com/dawn/+/refs/heads/main/docs/quickstart-cmake.md)
 
 ```sh
 cd dawn
