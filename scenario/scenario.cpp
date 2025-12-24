@@ -6,6 +6,16 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+AppPtr app_factory(Scenario scenario, Context&& webGpu) {
+    switch (scenario) {
+        case Scenario::COPY_2D_STAGING_TO_TEXTURE:
+            return std::make_unique<ImageLoading>(webGpu);
+        case Scenario::TRIANGLE:
+            return std::make_unique<Triangle>(std::move(webGpu));
+        default:
+            throw std::runtime_error("Invalid scenario");
+    }
+}
 
 void run_app(Context&& webGpu, Scenario scenario) {
     std::string input;
