@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <ranges>
+#include <utility>
 namespace math = donut::math;
 
 struct Vertex {
@@ -98,6 +99,10 @@ static nvrhi::ShaderHandle CreateShader(const char* fileName,
     }
     return m_Device->createShader(desc, byteCode.data(), byteCode.size());
 }
+static const math::float3 g_RotationAxes[1] = {
+    math::float3(1.f, 0.f, 0.f),
+};
+
 
 AppPtr Shader::run() {
     auto m_ConstantBuffer = context.nvrhiDevice->createBuffer(
@@ -213,6 +218,65 @@ AppPtr Shader::run() {
         nvrhi::FramebufferDesc().addColorAttachment(screenTexture));
 
     auto m_Pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, initial_framebuffer);
+    float m_Rotation = 0.f;
 
+    std::string _;
+
+    while (true) {
+        std::cout << "Press enter to rotate the model" << std::endl;
+        std::cin >> _;
+        /* Render here */
+
+        m_CommandList->open();
+
+        // Fill out the constant buffer slices for multiple views of the model.
+        ConstantBufferEntry modelConstants[1];
+        const int viewIndex = 0;
+
+        math::affine3 viewMatrix = math::rotation(normalize(g_RotationAxes[viewIndex]), m_Rotation)
+                                   * math::yawPitchRoll(0.f, math::radians(-30.f), 0.f)
+                                   * math::translation(math::float3(0, 0, 2));
+        math::float4x4 projMatrix = math::perspProjD3DStyle(math::radians(60.f),
+                                                            float(screenWidth) / float(screenHeight),
+                                                            0.1f,
+                                                            10.f);
+        math::float4x4 viewProjMatrix = math::affineToHomogeneous(viewMatrix) * projMatrix;
+        modelConstants[viewIndex].viewProjMatrix = viewProjMatrix;
+        // Upload all constant buffer slices at once.
+        m_CommandList->writeBuffer(m_ConstantBuffer, modelConstants, sizeof(modelConstants));
+
+        nvrhi::GraphicsState state;
+        // Pick the right binding set for this view.
+        state.bindings = {m_BindingSets};
+        state.indexBuffer = {m_IndexBuffer, nvrhi::Format::R32_UINT, 0};
+        // Bind the vertex buffers in reverse order to test the NVRHI implementation of binding slots
+        state.vertexBuffers = {
+            {m_VertexBuffer, 1, offsetof(Vertex, uv)},
+            {m_VertexBuffer, 0, offsetof(Vertex, position)}
+        };
+        state.pipeline = m_Pipeline;
+
+        state.framebuffer = initial_framebuffer;
+
+        // Construct the viewport so that all viewports form a grid.
+
+        const nvrhi::Viewport viewport = nvrhi::Viewport(0, screenWidth, 0, screenHeight, 0.f, 1.f);
+        state.viewport.addViewportAndScissorRect(viewport);
+
+        // Update the pipeline, bindings, and other state.
+        m_CommandList->setGraphicsState(state);
+
+        // Draw the model.
+        nvrhi::DrawArguments args;
+        args.vertexCount = std::size(g_Indices);
+        m_CommandList->drawIndexed(args);
+
+        m_CommandList->close();
+        context.nvrhiDevice->executeCommandList(m_CommandList);
+        // glClear(GL_COLOR_BUFFER_BIT);
+
+        /* Swap front and back buffers */
+        m_Rotation += 0.01f;
+    }
     throw std::runtime_error("Pipeline creation failed");
 }
