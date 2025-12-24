@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "my_io.h"
+#include "nvrhi_util.h"
 
 static nvrhi::TextureHandle create3DTexture(const uint32_t width,
                                             const uint32_t height,
@@ -22,19 +23,6 @@ static nvrhi::TextureHandle create3DTexture(const uint32_t width,
     return device->createTexture(dstTextureDesc);
 }
 
-static nvrhi::StagingTextureHandle create3DStaging(uint32_t width,
-                                                   uint32_t height,
-                                                   uint32_t depth,
-                                                   const nvrhi::Format format,
-                                                   const nvrhi::DeviceHandle& device) {
-    nvrhi::TextureDesc stagingTextureDesc{};
-    stagingTextureDesc.width = width;
-    stagingTextureDesc.height = height;
-    stagingTextureDesc.depth = depth;
-    stagingTextureDesc.format = format;
-    stagingTextureDesc.dimension = nvrhi::TextureDimension::Texture3D;
-    return device->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
-}
 
 struct CommandSimple3DCopy : public App {
     nvrhi::CommandListHandle commandList;
@@ -51,16 +39,36 @@ struct CommandSimple3DCopy : public App {
     }
 
     AppPtr run() override {
-        auto dstTexture = create3DTexture(stagingTexture->getDesc().width,
-                                          stagingTexture->getDesc().height,
-                                          stagingTexture->getDesc().depth,
+        std::cout << "Input Destination Texture size. Default is x2" << std::endl;
+        auto dstSize = my_io::read_Extent3D(stagingTexture->getDesc().width * 2,
+                                            stagingTexture->getDesc().height * 2,
+                                            stagingTexture->getDesc().depth * 2);
+
+        auto dstTexture = create3DTexture(dstSize.width,
+                                          dstSize.height,
+                                          dstSize.depth,
                                           stagingTexture->getDesc().format,
                                           context.nvrhiDevice);
-        nvrhi::TextureSlice srcTextureSlice = nvrhi::TextureSlice().resolve(stagingTexture->getDesc());
-        nvrhi::TextureSlice destSlice = nvrhi::TextureSlice().resolve(stagingTexture->getDesc());
+        nvrhi::TextureSlice defaultDstSlice = nvrhi::TextureSlice().resolve(dstTexture->getDesc());
+
+        std::cout <<
+            "Input Destination Texture slice origin. Default is (dst.size - src.size)/2. Size is set to src staging texture size"
+            << std::endl;
+        auto dstOrigin = my_io::read_Origin3D((defaultDstSlice.width - stagingTexture->getDesc().width) / 2,
+                                              (defaultDstSlice.height - stagingTexture->getDesc().height) / 2,
+                                              (defaultDstSlice.depth - stagingTexture->getDesc().depth) / 2);
+        nvrhi::TextureSlice dstSlice(defaultDstSlice);
+        dstSlice.x = dstOrigin.x;
+        dstSlice.y = dstOrigin.y;
+        dstSlice.z = dstOrigin.z;
+        dstSlice.width = stagingTexture->getDesc().width;
+        dstSlice.height = stagingTexture->getDesc().height;
+        dstSlice.depth = stagingTexture->getDesc().depth;
+
+        nvrhi::TextureSlice srcSlice = nvrhi::TextureSlice().resolve(stagingTexture->getDesc());
 
         commandList->open();
-        commandList->copyTexture(dstTexture, destSlice, stagingTexture, srcTextureSlice);
+        commandList->copyTexture(dstTexture, dstSlice, stagingTexture, srcSlice);
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
 
@@ -78,13 +86,13 @@ AppPtr Map3DStaging::run() {
 
     auto sampleImage = images[0];
     std::cout << "Input Slice" << std::endl;
-    auto sr = my_io::read_box(0, 0, 0, sampleImage.width, sampleImage.height, images.size());
+    auto sr = my_io::read_box(100, 130, 11, 120, 80, 2);
 
-    auto staging = create3DStaging(sr.width,
-                                   sr.height,
-                                   sr.depth,
-                                   nvrhi::Format::RGBA8_UNORM,
-                                   context.nvrhiDevice);
+    auto staging = nvrhi_util::create3DStaging(sr.width,
+                                               sr.height,
+                                               sr.depth,
+                                               nvrhi::Format::RGBA8_UNORM,
+                                               context.nvrhiDevice);
 
     auto slice = nvrhi::TextureSlice{}.resolve(staging->getDesc());
     slice.width = sr.width;

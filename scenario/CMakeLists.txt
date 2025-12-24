@@ -13,5 +13,5 @@ add_library(scenario STATIC
         Map2DStaging.h
         Map3DStaging.cpp
         Map3DStaging.h)
-target_link_libraries(scenario my_math nvrhi Image my_io)
+target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util)
 target_include_directories(scenario PUBLIC include PRIVATE .)

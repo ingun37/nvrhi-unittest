@@ -37,6 +37,7 @@ add_subdirectory(Image)
 add_subdirectory(my_math)
 add_subdirectory(scenario)
 add_subdirectory(my_io)
+add_subdirectory(nvrhi-util)
 
 include(GoogleTest)
 add_subdirectory(shaders)
