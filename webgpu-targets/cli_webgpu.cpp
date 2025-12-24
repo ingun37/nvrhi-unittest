@@ -20,7 +20,7 @@ int main() {
     wgpu::Queue queue = device.GetQueue();
     nvrhi::DeviceHandle nvrhiDevice = nvrhi::webgpu::createDevice({device, queue});;
 
-    run_app(Context(nvrhiDevice), Scenario::COPY_2D_STAGING_TO_TEXTURE);
+    run_app(Context(nvrhiDevice), Scenario::COPY_3D);
 
     return 0;
 }

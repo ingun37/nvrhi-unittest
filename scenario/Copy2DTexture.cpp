@@ -5,6 +5,7 @@
 #include "Copy2DTexture.h"
 #include <iostream>
 #include <sstream>
+#include <my_io.h>
 
 static nvrhi::TextureHandle create2DTexture(const uint32_t width,
                                             const uint32_t height,
@@ -42,34 +43,15 @@ struct CommandExecution : public App {
 
 
 AppPtr CommandExecution::run() {
-    std::cout <<
-        "Enter destination offset_x, offset_y, width_ratio, and height_ratio (space-separated, default: 120 300 0.75 0.333): ";
-    std::string input;
-    std::getline(std::cin, input);
-    uint32_t dst_offset_x = 120;
-    uint32_t dst_offset_y = 300;
-    float dst_width_ratio = 0.75f;
-    float dst_height_ratio = 0.333f;
-
-    if (!input.empty()) {
-        std::istringstream iss(input);
-        uint32_t temp_ox, temp_oy;
-        float temp_width, temp_height;
-        if (iss >> temp_ox >> temp_oy >> temp_width >> temp_height) {
-            dst_offset_x = temp_ox;
-            dst_offset_y = temp_oy;
-            dst_width_ratio = temp_width;
-            dst_height_ratio = temp_height;
-        }
-    }
-
     uint32_t original_width = stagingTexture->getDesc().width;
     uint32_t original_height = stagingTexture->getDesc().height;
+    auto r = my_io::read_rect(120, 300, original_width * 0.75f, original_height * 0.333f);
+
     nvrhi::TextureSlice destSlice{};
-    destSlice.x = dst_offset_x;
-    destSlice.y = dst_offset_y;
-    destSlice.width = static_cast<uint32_t>(original_width * dst_width_ratio);
-    destSlice.height = static_cast<uint32_t>(original_height * dst_height_ratio);
+    destSlice.x = r.x;
+    destSlice.y = r.y;
+    destSlice.width = r.width;
+    destSlice.height = r.height;
     destSlice.depth = 1;
     nvrhi::TextureSlice srcTextureSlice{};
     srcTextureSlice.x = 0;

@@ -9,5 +9,5 @@ add_library(scenario STATIC
         include/scenario/Context.h
         Copy3D.cpp
         Copy3D.h)
-target_link_libraries(scenario my_math nvrhi Image)
+target_link_libraries(scenario my_math nvrhi Image my_io)
 target_include_directories(scenario PUBLIC include PRIVATE .)
