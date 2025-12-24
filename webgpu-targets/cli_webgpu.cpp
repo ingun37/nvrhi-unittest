@@ -6,7 +6,7 @@
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/webgpu.h>
 #include <webgpu-util.h>
-#include "scenario.h"
+#include "../scenario/include/scenario/scenario.h"
 
 
 int main() {

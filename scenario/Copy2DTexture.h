@@ -7,6 +7,7 @@
 #include "App.h"
 #include <nvrhi/nvrhi.h>
 #include <ios>
+#include <Image.h>
 
 struct CommandExecution : public App {
     nvrhi::CommandListHandle commandList;

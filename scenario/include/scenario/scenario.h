@@ -5,12 +5,7 @@
 #ifndef NVRHI_UNIT_TEST_SCENARIO_H
 #define NVRHI_UNIT_TEST_SCENARIO_H
 
-#include <utility>
-#include <memory>
-#include <fstream>
-#include "Copy2DTexture.h"
-#include "Triangle.h"
-
+#include "Context.h"
 
 enum struct Scenario {
     COPY_2D_STAGING_TO_TEXTURE,

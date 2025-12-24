@@ -7,20 +7,8 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <nvrhi/nvrhi.h>
-#include "Image.h"
+#include <scenario/Context.h>
 
-
-struct Context {
-    nvrhi::DeviceHandle nvrhiDevice;
-
-    Context() = delete;
-
-    Context(
-        nvrhi::DeviceHandle nvrhiDevice)
-        : nvrhiDevice(std::move(nvrhiDevice)) {
-    }
-};
 
 struct App {
     virtual ~App() = default;

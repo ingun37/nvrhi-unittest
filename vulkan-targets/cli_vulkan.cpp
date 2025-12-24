@@ -6,7 +6,7 @@
 // #include "volk.h"
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/vulkan.h>
-#include "../scenario/scenario.h"
+#include "../scenario/include/scenario/scenario.h"
 
 struct QueueFamilyIndices {
     uint32_t graphicsFamily;

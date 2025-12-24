@@ -2,10 +2,13 @@
 // Created by Ingun Jon on 12/23/25.
 //
 
-#include "scenario.h"
+#include <scenario/scenario.h>
 #include <iostream>
 #include <string>
 #include <sstream>
+#include "Triangle.h"
+#include "Copy2DTexture.h"
+
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
     switch (scenario) {
         case Scenario::COPY_2D_STAGING_TO_TEXTURE:
