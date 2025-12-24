@@ -12,7 +12,7 @@
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
     switch (scenario) {
         case Scenario::COPY_2D_STAGING_TO_TEXTURE:
-            return std::make_unique<ImageLoading>(webGpu);
+            return std::make_unique<Copy2D>(webGpu);
         case Scenario::TRIANGLE:
             return std::make_unique<Triangle>(std::move(webGpu));
         default:

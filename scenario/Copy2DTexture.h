@@ -33,10 +33,10 @@ struct ResourceSetup : public App {
     AppPtr run() override;
 };
 
-struct ImageLoading : public App {
-    ImageLoading() = delete;
+struct Copy2D : public App {
+    Copy2D() = delete;
 
-    ImageLoading(const Context& webGpu);
+    Copy2D(const Context& webGpu);
 
     AppPtr run() override;
 };

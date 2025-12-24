@@ -112,11 +112,11 @@ AppPtr ResourceSetup::run() {
         );
 }
 
-ImageLoading::ImageLoading(const Context& webGpu)
+Copy2D::Copy2D(const Context& webGpu)
     : App(webGpu, "Load image from file") {
 }
 
-AppPtr ImageLoading::run() {
+AppPtr Copy2D::run() {
     return std::make_unique<ResourceSetup>(
         Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png"),
         context,
