@@ -45,19 +45,22 @@ struct CommandExecution : public App {
 AppPtr CommandExecution::run() {
     uint32_t original_width = stagingTexture->getDesc().width;
     uint32_t original_height = stagingTexture->getDesc().height;
-    auto r = my_io::read_rect(120, 300, original_width * 0.75f, original_height * 0.333f);
+    std::cout << "Input Source Slice" << std::endl;
+    auto sr = my_io::read_rect(0, 0, original_width, original_height);
+    std::cout << "Input Destination Slice" << std::endl;
+    auto dr = my_io::read_rect(120, 300, original_width * 0.75f, original_height * 0.333f);
 
     nvrhi::TextureSlice destSlice{};
-    destSlice.x = r.x;
-    destSlice.y = r.y;
-    destSlice.width = r.width;
-    destSlice.height = r.height;
+    destSlice.x = dr.x;
+    destSlice.y = dr.y;
+    destSlice.width = dr.width;
+    destSlice.height = dr.height;
     destSlice.depth = 1;
     nvrhi::TextureSlice srcTextureSlice{};
-    srcTextureSlice.x = 0;
-    srcTextureSlice.y = 0;
-    srcTextureSlice.width = original_width;
-    srcTextureSlice.height = original_height;
+    srcTextureSlice.x = sr.x;
+    srcTextureSlice.y = sr.y;
+    srcTextureSlice.width = sr.width;
+    srcTextureSlice.height = sr.height;
     srcTextureSlice.depth = 1;
 
     auto dstTexture = create2DTexture(original_width * 2,
