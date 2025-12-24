@@ -28,15 +28,15 @@ static nvrhi::TextureHandle create2DTexture(const uint32_t width,
     return device->createTexture(dstTextureDesc);
 }
 
-struct CommandSimpleCopy : public App {
+struct CommandSimple2DCopy : public App {
     nvrhi::CommandListHandle commandList;
     nvrhi::StagingTextureHandle stagingTexture;
 
-    CommandSimpleCopy() = delete;
+    CommandSimple2DCopy() = delete;
 
-    CommandSimpleCopy(const Context& webGPU,
-                      nvrhi::CommandListHandle commandList,
-                      nvrhi::StagingTextureHandle stagingTexture)
+    CommandSimple2DCopy(const Context& webGPU,
+                        nvrhi::CommandListHandle commandList,
+                        nvrhi::StagingTextureHandle stagingTexture)
         : App(webGPU, "Execute command to copy staged buffer to texture"),
           commandList(std::move(commandList)),
           stagingTexture(std::move(stagingTexture)) {
@@ -57,7 +57,7 @@ struct CommandSimpleCopy : public App {
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
 
-        return std::make_unique<CommandSimpleCopy>(*this);
+        return std::make_unique<CommandSimple2DCopy>(*this);
     }
 };
 
@@ -95,12 +95,12 @@ AppPtr Map2DStaging::run() {
     for (uint32_t i = 0; i < sr.height; ++i) {
         memcpy(mapPtr + (i * staging->getDesc().width * pixelSize),
                image.data.data() + (i * imageRowPitch) + (sr.x * pixelSize),
-               sr.width * pixelSize);
+               pitch);
     }
 
     context.nvrhiDevice->unmapStagingTexture(staging);
 
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return std::make_unique<CommandSimpleCopy>(context, commandList, staging);
+    return std::make_unique<CommandSimple2DCopy>(context, commandList, staging);
 }

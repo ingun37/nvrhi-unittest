@@ -10,6 +10,8 @@ add_library(scenario STATIC
         Copy3D.cpp
         Copy3D.h
         Map2DStaging.cpp
-        Map2DStaging.h)
+        Map2DStaging.h
+        Map3DStaging.cpp
+        Map3DStaging.h)
 target_link_libraries(scenario my_math nvrhi Image my_io)
 target_include_directories(scenario PUBLIC include PRIVATE .)

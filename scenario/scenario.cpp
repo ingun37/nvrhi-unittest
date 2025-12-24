@@ -10,6 +10,7 @@
 #include "Copy2DTexture.h"
 #include "Copy3D.h"
 #include "Map2DStaging.h"
+#include "Map3DStaging.h"
 
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
     switch (scenario) {
@@ -21,6 +22,8 @@ AppPtr app_factory(Scenario scenario, Context&& webGpu) {
             return std::make_unique<Copy3D>(webGpu);
         case Scenario::MAP_2D_STAGING:
             return std::make_unique<Map2DStaging>(webGpu);
+        case Scenario::MAP_3D_STAGING:
+            return std::make_unique<Map3DStaging>(webGpu);
         default:
             throw std::runtime_error("Invalid scenario");
     }
@@ -35,8 +38,9 @@ void run_app(Context&& webGpu) {
         std::cout << "2: Triangle" << std::endl;
         std::cout << "3: Copy 3D" << std::endl;
         std::cout << "4: Map 2D Staging" << std::endl;
+        std::cout << "5: Map 3D Staging" << std::endl;
         std::cout << "Type 'exit' to quit." << std::endl;
-        std::cout << "Select a scenario (1-4): ";
+        std::cout << "Select a scenario: ";
 
         std::getline(std::cin, input);
         if (input == "exit") break;
@@ -46,6 +50,7 @@ void run_app(Context&& webGpu) {
         else if (input == "2") scenario = Scenario::TRIANGLE;
         else if (input == "3") scenario = Scenario::COPY_3D;
         else if (input == "4") scenario = Scenario::MAP_2D_STAGING;
+        else if (input == "5") scenario = Scenario::MAP_3D_STAGING;
         else {
             std::cout << "Invalid selection. Try again." << std::endl;
             continue;
