@@ -7,7 +7,11 @@
   <component name="CidrRootsConfiguration">
     <excludeRoots>
       <file path="$PROJECT_DIR$/cmake-build-debug" />
+      <file path="$PROJECT_DIR$/cmake-build-vulkan" />
+      <file path="$PROJECT_DIR$/cmake-build-webgpu" />
       <file path="$PROJECT_DIR$/cmake-build-xcode" />
+      <file path="$PROJECT_DIR$/cmake-build-xcode-vulkan" />
+      <file path="$PROJECT_DIR$/cmake-build-xcode-webgpu" />
       <file path="$PROJECT_DIR$/dawn/out" />
       <file path="$PROJECT_DIR$/dawn/third_party" />
     </excludeRoots>

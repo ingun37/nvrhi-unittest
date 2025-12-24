@@ -6,24 +6,24 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include "Triangle.h"
 #include "Copy2DTexture.h"
 #include "Copy3D.h"
 #include "Map2DStaging.h"
 #include "Map3DStaging.h"
+#include "Shader.h"
 
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
     switch (scenario) {
         case Scenario::COPY_2D_STAGING_TO_TEXTURE:
             return std::make_unique<Copy2D>(webGpu);
-        case Scenario::TRIANGLE:
-            return std::make_unique<Triangle>(std::move(webGpu));
         case Scenario::COPY_3D:
             return std::make_unique<Copy3D>(webGpu);
         case Scenario::MAP_2D_STAGING:
             return std::make_unique<Map2DStaging>(webGpu);
         case Scenario::MAP_3D_STAGING:
             return std::make_unique<Map3DStaging>(webGpu);
+        case Scenario::SHADER:
+            return std::make_unique<Shader>(webGpu);
         default:
             throw std::runtime_error("Invalid scenario");
     }
@@ -35,7 +35,7 @@ void run_app(Context&& webGpu) {
     while (true) {
         std::cout << "\nAvailable Scenarios:" << std::endl;
         std::cout << "1: Copy 2D Staging to Texture" << std::endl;
-        std::cout << "2: Triangle" << std::endl;
+        std::cout << "2: Shader" << std::endl;
         std::cout << "3: Copy 3D" << std::endl;
         std::cout << "4: Map 2D Staging" << std::endl;
         std::cout << "5: Map 3D Staging" << std::endl;
@@ -47,7 +47,7 @@ void run_app(Context&& webGpu) {
 
         Scenario scenario;
         if (input == "1") scenario = Scenario::COPY_2D_STAGING_TO_TEXTURE;
-        else if (input == "2") scenario = Scenario::TRIANGLE;
+        else if (input == "2") scenario = Scenario::SHADER;
         else if (input == "3") scenario = Scenario::COPY_3D;
         else if (input == "4") scenario = Scenario::MAP_2D_STAGING;
         else if (input == "5") scenario = Scenario::MAP_3D_STAGING;

@@ -10,9 +10,9 @@
 enum struct Scenario {
     COPY_2D_STAGING_TO_TEXTURE,
     COPY_3D,
-    TRIANGLE,
     MAP_2D_STAGING,
-    MAP_3D_STAGING
+    MAP_3D_STAGING,
+    SHADER
 };
 
 void run_app(Context&& webGpu);
