@@ -9,6 +9,7 @@
 #include "Triangle.h"
 #include "Copy2DTexture.h"
 #include "Copy3D.h"
+#include "Map2DStaging.h"
 
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
     switch (scenario) {
@@ -18,19 +19,57 @@ AppPtr app_factory(Scenario scenario, Context&& webGpu) {
             return std::make_unique<Triangle>(std::move(webGpu));
         case Scenario::COPY_3D:
             return std::make_unique<Copy3D>(webGpu);
+        case Scenario::MAP_2D_STAGING:
+            return std::make_unique<Map2DStaging>(webGpu);
         default:
             throw std::runtime_error("Invalid scenario");
     }
 }
 
-void run_app(Context&& webGpu, Scenario scenario) {
+void run_app(Context&& webGpu) {
     std::string input;
 
-    AppPtr app = app_factory(scenario, std::move(webGpu));
     while (true) {
-        std::cout << "Enter to:" << app->title << std::endl;
+        std::cout << "\nAvailable Scenarios:" << std::endl;
+        std::cout << "1: Copy 2D Staging to Texture" << std::endl;
+        std::cout << "2: Triangle" << std::endl;
+        std::cout << "3: Copy 3D" << std::endl;
+        std::cout << "4: Map 2D Staging" << std::endl;
+        std::cout << "Type 'exit' to quit." << std::endl;
+        std::cout << "Select a scenario (1-4): ";
+
         std::getline(std::cin, input);
         if (input == "exit") break;
-        app = std::move(app->run());
+
+        Scenario scenario;
+        if (input == "1") scenario = Scenario::COPY_2D_STAGING_TO_TEXTURE;
+        else if (input == "2") scenario = Scenario::TRIANGLE;
+        else if (input == "3") scenario = Scenario::COPY_3D;
+        else if (input == "4") scenario = Scenario::MAP_2D_STAGING;
+        else {
+            std::cout << "Invalid selection. Try again." << std::endl;
+            continue;
+        }
+
+        try {
+            // Note: We use a copy or shared context if we want to keep the loop running
+            // since app_factory currently takes Context&& (moves it).
+            // If App needs ownership, you might need to re-initialize the context or pass a reference.
+            AppPtr app = app_factory(scenario, std::move(webGpu));
+
+            while (app) {
+                std::cout << "\nRunning: " << app->title << std::endl;
+                std::cout << "Press Enter to step, or type 'back' to choose another scenario: ";
+                std::getline(std::cin, input);
+
+                if (input == "back") break;
+                if (input == "exit") return;
+
+                app = app->run();
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            break; // Exit or handle re-initialization of webGpu context
+        }
     }
 }
