@@ -6,53 +6,50 @@
 #include <iostream>
 #include <sstream>
 
-nvrhi::Format format(const Image& img) {
+static nvrhi::TextureHandle create2DTexture(const uint32_t width,
+                                            const uint32_t height,
+                                            const nvrhi::Format format,
+                                            const nvrhi::DeviceHandle& device) {
+    nvrhi::TextureDesc dstTextureDesc{};
+    dstTextureDesc.width = width;
+    dstTextureDesc.height = height;
+    dstTextureDesc.dimension = nvrhi::TextureDimension::Texture2D;
+    dstTextureDesc.format = format;
+    return device->createTexture(dstTextureDesc);
+}
+
+static nvrhi::Format format(const Image& img) {
     if (img.channel == 4) return nvrhi::Format::RGBA8_UNORM;
     throw std::runtime_error("invalid image channel");
 }
 struct CommandExecution : public App {
     nvrhi::CommandListHandle commandList;
-    nvrhi::TextureHandle destTexture;
     nvrhi::StagingTextureHandle stagingTexture;
 
     CommandExecution() = delete;
 
     CommandExecution(const Context& webGPU,
                      nvrhi::CommandListHandle commandList,
-                     nvrhi::TextureHandle destTexture,
-                     nvrhi::StagingTextureHandle stagingTexture);
+                     nvrhi::StagingTextureHandle stagingTexture)
+        : App(webGPU, "Execute command to copy staged buffer to texture"),
+          commandList(std::move(commandList)),
+          stagingTexture(std::move(stagingTexture)) {
+    }
 
     AppPtr run() override;
 };
 
-struct ResourceSetup : public App {
-    Image image;
-    uint32_t dest_x;
 
-    ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x);
-
-    AppPtr run() override;
-};
-
-CommandExecution::CommandExecution(const Context& webGPU,
-                                   nvrhi::CommandListHandle commandList,
-                                   nvrhi::TextureHandle destTexture,
-                                   nvrhi::StagingTextureHandle stagingTexture)
-    : App(webGPU, "Execute command to copy staged buffer to texture"),
-      commandList(std::move(commandList)),
-      destTexture(std::move(destTexture)),
-      stagingTexture(std::move(stagingTexture)) {
-}
 
 AppPtr CommandExecution::run() {
     std::cout <<
-        "Enter destination offset_x, offset_y, width_ratio, and height_ratio (space-separated, default: 0 0 0.5 0.5): ";
+        "Enter destination offset_x, offset_y, width_ratio, and height_ratio (space-separated, default: 120 300 0.75 0.333): ";
     std::string input;
     std::getline(std::cin, input);
-    uint32_t dst_offset_x = 0;
-    uint32_t dst_offset_y = 0;
-    float dst_width_ratio = 0.5f;
-    float dst_height_ratio = 0.5f;
+    uint32_t dst_offset_x = 120;
+    uint32_t dst_offset_y = 300;
+    float dst_width_ratio = 0.75f;
+    float dst_height_ratio = 0.333f;
 
     if (!input.empty()) {
         std::istringstream iss(input);
@@ -80,24 +77,25 @@ AppPtr CommandExecution::run() {
     srcTextureSlice.width = original_width;
     srcTextureSlice.height = original_height;
     srcTextureSlice.depth = 1;
+
+    auto dstTexture = create2DTexture(original_width * 2,
+                                      original_height * 2,
+                                      stagingTexture->getDesc().format,
+                                      context.nvrhiDevice);
     commandList->open();
-    commandList->copyTexture(destTexture, destSlice, stagingTexture, srcTextureSlice);
+    commandList->copyTexture(dstTexture, destSlice, stagingTexture, srcTextureSlice);
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
-    return std::make_unique<CommandExecution>(context,
-                                              commandList,
-                                              destTexture,
-                                              stagingTexture
-        );
+    return std::make_unique<CommandExecution>(*this);
 }
 
-ResourceSetup::ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x)
-    : App(webGPU, "Set up textuere reosurces and copy image to staged buffer"),
-      image(std::move(image)),
-      dest_x(dest_x) {
+Copy2D::Copy2D(const Context& webGpu)
+    : App(webGpu, "Load image from file") {
 }
 
-AppPtr ResourceSetup::run() {
+AppPtr Copy2D::run() {
+    auto image = Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png");
+
     nvrhi::TextureDesc stagingTextureDesc{};
     stagingTextureDesc.width = image.width;
     stagingTextureDesc.height = image.height;
@@ -120,28 +118,11 @@ AppPtr ResourceSetup::run() {
     }
 
     context.nvrhiDevice->unmapStagingTexture(stagingTexture);
-    nvrhi::TextureDesc destTextureDesc{};
-    destTextureDesc.width = image.width * 2;
-    destTextureDesc.height = image.height * 2;
-    destTextureDesc.format = format(image);
-    auto destTexture = context.nvrhiDevice->createTexture(destTextureDesc);
 
     auto commandList = context.nvrhiDevice->createCommandList();
 
     return std::make_unique<CommandExecution>(context,
                                               commandList,
-                                              destTexture,
                                               stagingTexture
         );
-}
-
-Copy2D::Copy2D(const Context& webGpu)
-    : App(webGpu, "Load image from file") {
-}
-
-AppPtr Copy2D::run() {
-    return std::make_unique<ResourceSetup>(
-        Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png"),
-        context,
-        256);
 }
