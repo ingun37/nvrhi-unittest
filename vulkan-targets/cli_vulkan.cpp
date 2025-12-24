@@ -150,7 +150,7 @@ int main() {
     // deviceDesc.logBufferLifetime = m_DeviceParams.logBufferLifetime;
     auto nvrhiDevice = nvrhi::vulkan::createDevice(deviceDesc);
 
-    run_app(Context(nvrhiDevice));
+    run_app(Context(nvrhiDevice), Scenario::COPY_3D);
 
     vkDestroyDevice(device, nullptr);
 

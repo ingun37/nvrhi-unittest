@@ -9,6 +9,7 @@
 
 enum struct Scenario {
     COPY_2D_STAGING_TO_TEXTURE,
+    COPY_3D,
     TRIANGLE
 };
 

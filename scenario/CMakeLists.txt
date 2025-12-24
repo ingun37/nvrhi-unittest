@@ -6,6 +6,8 @@ add_library(scenario STATIC
         Copy2DTexture.h
         Copy2DTexture.cpp
         Triangle.cpp
-        include/scenario/Context.h)
+        include/scenario/Context.h
+        Copy3D.cpp
+        Copy3D.h)
 target_link_libraries(scenario my_math nvrhi Image)
 target_include_directories(scenario PUBLIC include PRIVATE .)

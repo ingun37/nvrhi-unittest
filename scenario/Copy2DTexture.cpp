@@ -10,6 +10,29 @@ nvrhi::Format format(const Image& img) {
     if (img.channel == 4) return nvrhi::Format::RGBA8_UNORM;
     throw std::runtime_error("invalid image channel");
 }
+struct CommandExecution : public App {
+    nvrhi::CommandListHandle commandList;
+    nvrhi::TextureHandle destTexture;
+    nvrhi::StagingTextureHandle stagingTexture;
+
+    CommandExecution() = delete;
+
+    CommandExecution(const Context& webGPU,
+                     nvrhi::CommandListHandle commandList,
+                     nvrhi::TextureHandle destTexture,
+                     nvrhi::StagingTextureHandle stagingTexture);
+
+    AppPtr run() override;
+};
+
+struct ResourceSetup : public App {
+    Image image;
+    uint32_t dest_x;
+
+    ResourceSetup(Image image, const Context& webGPU, uint32_t dest_x);
+
+    AppPtr run() override;
+};
 
 CommandExecution::CommandExecution(const Context& webGPU,
                                    nvrhi::CommandListHandle commandList,
