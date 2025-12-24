@@ -10,13 +10,16 @@
 #include "Image.h"
 
 
-nvrhi::TextureHandle createRegular2DTexture(const uint32_t width,
+static nvrhi::TextureHandle create3DTexture(const uint32_t width,
                                             const uint32_t height,
+                                            const uint32_t depth,
                                             const nvrhi::Format format,
                                             const nvrhi::DeviceHandle& device) {
     nvrhi::TextureDesc dstTextureDesc{};
     dstTextureDesc.width = width;
     dstTextureDesc.height = height;
+    dstTextureDesc.depth = depth;
+    dstTextureDesc.dimension = nvrhi::TextureDimension::Texture3D;
     dstTextureDesc.format = format;
     return device->createTexture(dstTextureDesc);
 }
@@ -38,18 +41,20 @@ struct CommandCopy : public App {
     AppPtr run() override {
         const uint32_t width = stagingTexture->getDesc().width;
         const uint32_t height = stagingTexture->getDesc().height;
-        auto dstTexture = createRegular2DTexture(width * 2,
-                                                 height * 2,
-                                                 stagingTexture->getDesc().format,
-                                                 context.nvrhiDevice);
+        auto dstTexture = create3DTexture(width * 2,
+                                          height * 2,
+                                          4,
+                                          stagingTexture->getDesc().format,
+                                          context.nvrhiDevice);
         nvrhi::TextureSlice srcTextureSlice = nvrhi::TextureSlice().resolve(stagingTexture->getDesc());
         srcTextureSlice.z = 10;
         nvrhi::TextureSlice destSlice{};
         destSlice.x = 120;
         destSlice.y = 300;
+        destSlice.z = 1;
         destSlice.width = static_cast<uint32_t>(width * 0.75);
         destSlice.height = static_cast<uint32_t>(height * 0.333);
-        destSlice.depth = 1;
+        destSlice.depth = 2;
 
         commandList->open();
         commandList->copyTexture(dstTexture, destSlice, stagingTexture, srcTextureSlice);
