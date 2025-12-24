@@ -87,6 +87,8 @@ AppPtr Map3DStaging::run() {
                                    context.nvrhiDevice);
 
     auto slice = nvrhi::TextureSlice{}.resolve(staging->getDesc());
+    slice.width = sr.width;
+    slice.height = sr.height;
     size_t pitch;
     auto mapPtr = static_cast<uint8_t*>(context.nvrhiDevice->mapStagingTexture(staging,
                                                                                slice,
@@ -103,7 +105,7 @@ AppPtr Map3DStaging::run() {
     for (uint32_t i = 0; i < sr.depth; ++i) {
         for (uint32_t j = 0; j < sr.height; ++j) {
             memcpy(mapPtr + (i * stagingPlanePitch) + (j * stagingRowPitch),
-                   images[sr.z + i].data.data() + (j * imageRowPitch) + (sr.x * pixelSize),
+                   images[sr.z + i].data.data() + ((sr.y + j) * imageRowPitch) + (sr.x * pixelSize),
                    pitch);
         }
     }
