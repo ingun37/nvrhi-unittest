@@ -36,7 +36,14 @@ struct Fragment
 struct VertexStageOutput
 {
     CoarseVertex    coarseVertex    : CoarseVertex;
+    nointerpolation uint2 info : AAAA;
     float4          sv_position     : SV_Position;
+};
+
+struct FragmentStageInput
+{
+    CoarseVertex coarseVertex : CoarseVertex;
+    nointerpolation uint2 info : AAAA;
 };
 
 [shader("vertex")]
@@ -49,6 +56,7 @@ VertexStageOutput vertexMain(
     float2 uv    = assembledVertex.uv;
 
     output.coarseVertex.uv = uv;
+    output.info = uint2(1,2);
     output.sv_position = mul(modelViewProjection, float4(position, 1.0));
 
     return output;
@@ -58,9 +66,9 @@ VertexStageOutput vertexMain(
 
 [shader("fragment")]
 Fragment fragmentMain(
-    CoarseVertex coarseVertex : CoarseVertex) : SV_Target
+    FragmentStageInput input) : SV_Target
 {
-    float2 uv = coarseVertex.uv;
+    float2 uv = input.coarseVertex.uv;
 
     Fragment output;
     output.color = float4(uv, 0.0, 1.0);

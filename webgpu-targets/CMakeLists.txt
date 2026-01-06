@@ -23,10 +23,10 @@ target_link_libraries(
 
 gtest_discover_tests(nvrhi_unit_test)
 
-add_executable(glfw_app glfw_app.cpp)
+add_executable(glfw_native_app glfw_native_app.cpp)
 
 target_link_libraries(
-        glfw_app
+        glfw_native_app
         my_math
         webgpu_util
         webgpu_glfw_util
@@ -37,7 +37,7 @@ target_link_libraries(
         glfw
 )
 
-add_dependencies(glfw_app shaders)
+add_dependencies(glfw_native_app shaders)
 
 add_executable(cli_webgpu cli_webgpu.cpp)
 
