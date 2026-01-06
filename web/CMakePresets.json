@@ -1,0 +1,13 @@
+{
+  "configurePresets": [
+    {
+      "name": "Wasm",
+      "displayName": "Wasm",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "/opt/homebrew/Cellar/emscripten/4.0.21/libexec/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "/opt/homebrew/opt/node/bin/node"
+      }
+    }
+  ],
+  "version": 10
+}

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../" vcs="Git" />
     <mapping directory="$USER_HOME$/projects/NVRHI" vcs="Git" />
     <mapping directory="$USER_HOME$/projects/NVRHI/rtxmu" vcs="Git" />
     <mapping directory="$USER_HOME$/projects/NVRHI/thirdparty/DirectX-Headers" vcs="Git" />
