@@ -76,5 +76,5 @@ void create_surface(UserData &user_data) {
   user_data.surface->Configure(&config);
 
   std::cout << "Surface is created" << std::endl;
-  user_data._stage = Stage::INITIALIZED_NVRHI;
+  user_data._stage = Stage::INITIALIZED_ALL;
 }
