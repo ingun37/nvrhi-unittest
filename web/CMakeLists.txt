@@ -66,7 +66,9 @@ else ()
     target_compile_options(async_test7 PUBLIC --use-port=emdawnwebgpu -sPROXY_TO_PTHREAD -pthread -sPTHREAD_POOL_SIZE=4)
     target_link_options(async_test7 PUBLIC --use-port=emdawnwebgpu -sPROXY_TO_PTHREAD -pthread -sPTHREAD_POOL_SIZE=4)
 
-    add_executable(main_glfw main_glfw.cpp)
+    add_executable(main_glfw main_glfw.cpp
+            wgpu-util.cpp
+            wgpu-util.h)
     target_link_libraries(main_glfw
             nvrhi
             nvrhi_webgpu
