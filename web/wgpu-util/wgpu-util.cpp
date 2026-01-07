@@ -198,3 +198,7 @@ nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device) {
 
     return new nvrhi::BufferHandle(std::move(buffer));
 }
+
+void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(void*)> callback) {
+    device->mapBufferAsync(buffer, nvrhi::CpuAccessMode::Read, callback);
+}
