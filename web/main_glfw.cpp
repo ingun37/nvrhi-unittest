@@ -7,14 +7,18 @@
 emscripten::val _iter(UserData &user_data) {
     if (user_data._stage == Stage::UNINITIALIZED) {
         user_data._stage = Stage::INITIALIZING_ADAPTER;
-
         request_adapter(*user_data.instance, [&](wgpu::Adapter &&adapter) {
             user_data._stage = Stage::INITIALIZED_ADAPTER;
             user_data.adapter = new wgpu::Adapter(std::move(adapter));
         });
     } else if (user_data._stage == Stage::INITIALIZED_ADAPTER) {
-        request_device(user_data);
+        user_data._stage = Stage::INITIALIZING_DEVICE;
+        request_device(*user_data.adapter, [&](wgpu::Device &&device) {
+            user_data._stage = Stage::INITIALIZED_DEVICE;
+            user_data.device = new wgpu::Device(std::move(device));
+        });
     } else if (user_data._stage == Stage::INITIALIZED_DEVICE) {
+        user_data.queue = new wgpu::Queue(user_data.device->GetQueue());
         create_surface(user_data);
     }
     return emscripten::val::undefined();

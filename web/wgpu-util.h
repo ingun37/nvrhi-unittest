@@ -41,7 +41,7 @@ struct UserData {
 void request_adapter(const wgpu::Instance &instance,
                      std::function<void(wgpu::Adapter &&)> callback);
 
-void request_device(UserData &user_data);
+void request_device(const wgpu::Adapter &adapter, std::function<void(wgpu::Device &&)> callback);
 
 void create_surface(UserData &user_data);
 #endif // ASYNC_TEST_WGPU_UTIL_H
