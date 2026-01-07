@@ -1,0 +1,23 @@
+//
+// Created by Ingun Jon on 12/24/25.
+//
+
+#ifndef NVRHI_UNIT_TEST_COPY2DTEXTURE_H
+#define NVRHI_UNIT_TEST_COPY2DTEXTURE_H
+#include "App.h"
+#include <nvrhi/nvrhi.h>
+#include <ios>
+#include <Image.h>
+
+
+
+struct Copy2D : public App {
+    Copy2D() = delete;
+
+    Copy2D(const Context& webGpu);
+
+    AppPtr run() override;
+};
+
+
+#endif //NVRHI_UNIT_TEST_COPY2DTEXTURE_H

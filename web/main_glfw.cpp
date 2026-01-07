@@ -2,7 +2,7 @@
 #include <emscripten/val.h>
 #include <iostream>
 
-#include "wgpu-util.h"
+#include "wgpu-util/include/wgpu-util.h"
 
 emscripten::val _iter(UserData &user_data) {
     if (user_data._stage == Stage::UNINITIALIZED) {
@@ -34,8 +34,9 @@ emscripten::val _iter(UserData &user_data) {
             "/Users/ingun/CLionProjects/nvrhi-unit-test/cmake-build-webgpu/shaders/generated_wgsl/shader.wgsl",
             *user_data.nvrhi_device);
         user_data._stage = Stage::INITIALIZED_ALL;
-    } else if (user_data._stage == Stage::INITIALIZED_ALL) {
         std::cout << "DONE!!" << std::endl;
+    } else if (user_data._stage == Stage::INITIALIZED_ALL) {
+        // std::cout << "DONE!!" << std::endl;
     }
     return emscripten::val::undefined();
 }

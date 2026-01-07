@@ -24,6 +24,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nvrhi)
 
 add_subdirectory(my_math)
+add_subdirectory(Image)
+add_subdirectory(my_io)
+add_subdirectory(nvrhi-util)
+add_subdirectory(scenario)
 
 if (NOT EMSCRIPTEN)
     find_package(Threads)
@@ -68,16 +72,26 @@ else ()
     target_compile_options(async_test7 PUBLIC --use-port=emdawnwebgpu -sPROXY_TO_PTHREAD -pthread -sPTHREAD_POOL_SIZE=4)
     target_link_options(async_test7 PUBLIC --use-port=emdawnwebgpu -sPROXY_TO_PTHREAD -pthread -sPTHREAD_POOL_SIZE=4)
 
-    add_executable(main_glfw main_glfw.cpp
-            wgpu-util.cpp
-            wgpu-util.h)
+    add_subdirectory(wgpu-util)
+    
+    add_executable(main_glfw main_glfw.cpp)
     target_link_libraries(main_glfw
             nvrhi
             nvrhi_webgpu
             my_math
+            wgpu-util
     )
     target_compile_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
     target_link_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
 
+    add_executable(cli_webgpu cli_webgpu.cpp)
+    target_link_libraries(cli_webgpu
+            scenario
+            nvrhi
+            nvrhi_webgpu
+            Image
+    )
+    target_compile_options(scenario PUBLIC --use-port=contrib.glfw3 -lembind)
+    target_link_options(scenario PUBLIC --use-port=contrib.glfw3 -lembind)
 endif ()
 
