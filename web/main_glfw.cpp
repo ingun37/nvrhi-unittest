@@ -44,26 +44,39 @@ emscripten::val _iter(UserData &user_data) {
         user_data._stage = Stage::BUFFER_CREATED;
     } else if (user_data._stage == Stage::BUFFER_CREATED) {
         std::cout << "Mapping buffer" << std::endl;
-        map_buffer(*user_data.nvrhi_device,
-                   *user_data.buffer,
-                   [&](const void* data) {
-                       std::cout << "Buffer read complete" << std::endl;
-                       user_data.map_ptr = data;
-                       user_data._stage = Stage::BUFFER_MAPPED;
-                   });
+        user_data._stage = Stage::BUFFER_MAPPED;
+
+        // map_buffer(*user_data.nvrhi_device,
+        //            *user_data.buffer,
+        //            [&](const void* data) {
+        //                std::cout << "Buffer read complete" << std::endl;
+        //                user_data.map_ptr = data;
+        //                user_data._stage = Stage::BUFFER_MAPPED;
+        //            });
     } else if (user_data._stage == Stage::BUFFER_MAPPED) {
-        if (user_data.count++ > 100) user_data._stage = Stage::BUFFER_COPY_READY;
+        if (user_data.count++ > 1) user_data._stage = Stage::BUFFER_COPY_READY;
     } else if (user_data._stage == Stage::BUFFER_COPY_READY) {
         std::cout << "Copying buffer" << std::endl;
         copy_buffer(*user_data.nvrhi_device, *user_data.random_buffer, *user_data.buffer);
         user_data._stage = Stage::BUFFER_COPIED;
     } else if (user_data._stage == Stage::BUFFER_COPIED) {
-        if (user_data.count++ > 200) user_data._stage = Stage::BUFFER_READ_READY;
+        if (user_data.count++ > 2) user_data._stage = Stage::BUFFER_READ_READY;
     } else if (user_data._stage == Stage::BUFFER_READ_READY) {
-        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(user_data.map_ptr);
-        std::cout << ptr[0] << ptr[1] << ptr[2] << ptr[3] << std::endl;
-        user_data._stage = Stage::EXITING;
+        map_buffer(*user_data.nvrhi_device,
+                   *user_data.buffer,
+                   [&](const void* data) {
+                       std::cout << "Buffer read complete" << std::endl;
+                       user_data.map_ptr = data;
+                       user_data._stage = Stage::EXITING;
+                   });
     } else if (user_data._stage == Stage::EXITING) {
+        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(user_data.map_ptr);
+        const int pixel_pitch = 4 * 8;
+        const int offset = pixel_pitch * 1210;
+        std::cout << (int)ptr[offset + 0] << ", " << (int)ptr[offset + 1] << ", " << (int)ptr[offset + 2] << ", " << (
+                int)ptr[offset + 3] <<
+            std::endl;
+
         std::cout << "Exiting" << std::endl;
         user_data._stage = Stage::EXIT;
     }
