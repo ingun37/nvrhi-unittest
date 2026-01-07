@@ -24,7 +24,18 @@ emscripten::val _iter(UserData &user_data) {
 
         user_data.surface = create_surface(user_data.instance);
         configure_surface(user_data.adapter, user_data.device, user_data.surface, user_data.width, user_data.height);
+        user_data._stage = Stage::INITIALIZED_SURFACE;
+    } else if (user_data._stage == Stage::INITIALIZED_SURFACE) {
+        std::cout << "creating shaders" << std::endl;
+        user_data.vertex_shader = create_vertex_shader(
+            "/Users/ingun/CLionProjects/nvrhi-unit-test/cmake-build-webgpu/shaders/generated_wgsl/shader.wgsl",
+            *user_data.nvrhi_device);
+        user_data.pixel_shader = create_pixel_shader(
+            "/Users/ingun/CLionProjects/nvrhi-unit-test/cmake-build-webgpu/shaders/generated_wgsl/shader.wgsl",
+            *user_data.nvrhi_device);
         user_data._stage = Stage::INITIALIZED_ALL;
+    } else if (user_data._stage == Stage::INITIALIZED_ALL) {
+        std::cout << "DONE!!" << std::endl;
     }
     return emscripten::val::undefined();
 }

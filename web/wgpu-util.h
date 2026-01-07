@@ -9,6 +9,10 @@
 #include <nvrhi/webgpu.h>
 #include <webgpu/webgpu_cpp.h>
 #include <functional>
+#include "my_math.h"
+
+namespace dm = donut::math;
+namespace math = donut::math;
 
 enum Stage {
     UNINITIALIZED,
@@ -16,7 +20,13 @@ enum Stage {
     INITIALIZED_ADAPTER,
     INITIALIZING_DEVICE,
     INITIALIZED_DEVICE,
+    INITIALIZED_SURFACE,
     INITIALIZED_ALL,
+};
+
+struct Vertex {
+    math::float3 position;
+    math::float2 uv;
 };
 
 struct UserData {
@@ -30,6 +40,8 @@ struct UserData {
     wgpu::Queue *queue = nullptr;
     nvrhi::DeviceHandle *nvrhi_device = nullptr;
     wgpu::Surface *surface = nullptr;
+    nvrhi::ShaderHandle *vertex_shader;
+    nvrhi::ShaderHandle *pixel_shader;
 
     UserData() = delete;
 
@@ -52,4 +64,8 @@ void configure_surface(
     wgpu::Surface *surface,
     int width, int height
 );
+
+nvrhi::ShaderHandle *create_vertex_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
+
+nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
 #endif // ASYNC_TEST_WGPU_UTIL_H

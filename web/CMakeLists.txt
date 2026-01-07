@@ -23,6 +23,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nvrhi)
 
+add_subdirectory(my_math)
+
 if (NOT EMSCRIPTEN)
     find_package(Threads)
     find_package(Dawn REQUIRED)
@@ -72,6 +74,7 @@ else ()
     target_link_libraries(main_glfw
             nvrhi
             nvrhi_webgpu
+            my_math
     )
     target_compile_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
     target_link_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
