@@ -45,7 +45,7 @@ emscripten::val _iter(UserData &user_data) {
     } else if (user_data._stage == Stage::STAGING_CREATED) {
         read_buffer(*user_data.nvrhi_device,
                     *user_data.buffer,
-                    [&](void* data) {
+                    [&](const void* data) {
                         std::cout << "Buffer read complete" << std::endl;
                         user_data._stage = Stage::EXITING;
                     });

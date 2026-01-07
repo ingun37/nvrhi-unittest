@@ -77,6 +77,6 @@ nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrh
 nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi::DeviceHandle &device);
 
 nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device);
-void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(void*)> callback);
+void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback);
 
 #endif // ASYNC_TEST_WGPU_UTIL_H

@@ -193,12 +193,13 @@ nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device) {
     const uint32_t imageRowPitch = width * pixelPitch;
     buffer_desc.format = nvrhi::Format::RGBA8_UNORM;
     buffer_desc.byteSize = imageRowPitch * height;
+    buffer_desc.cpuAccess = nvrhi::CpuAccessMode::Read;
 
     auto buffer = device->createBuffer(buffer_desc);
 
     return new nvrhi::BufferHandle(std::move(buffer));
 }
 
-void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(void*)> callback) {
+void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback) {
     device->mapBufferAsync(buffer, nvrhi::CpuAccessMode::Read, callback);
 }
