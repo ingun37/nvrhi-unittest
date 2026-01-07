@@ -46,6 +46,7 @@ struct UserData {
     nvrhi::ShaderHandle *vertex_shader;
     nvrhi::ShaderHandle *pixel_shader;
     nvrhi::StagingTextureHandle *staging;
+    nvrhi::BufferHandle* buffer;
 
     UserData() = delete;
 
@@ -74,5 +75,7 @@ nvrhi::ShaderHandle *create_vertex_shader(const std::string &shaderFilePath, nvr
 nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
 
 nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi::DeviceHandle &device);
+
+nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device);
 
 #endif // ASYNC_TEST_WGPU_UTIL_H

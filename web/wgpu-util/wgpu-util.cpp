@@ -154,7 +154,8 @@ nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi
 
     nvrhi::TextureSlice slice{};
     slice = slice.resolve(staging->getDesc());
-    const uint32_t imageRowPitch = width * 4 * 8;
+    const size_t pixelPitch = 4 * 8;
+    const uint32_t imageRowPitch = width * pixelPitch;
     size_t pitch;
     auto mapPtr = static_cast<uint8_t *>(
         device->mapStagingTexture(
@@ -167,6 +168,14 @@ nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi
 
     std::cout << "Pitch: " << pitch << std::endl;
     auto noise = std::make_unique<uint8_t[]>(imageRowPitch * height);
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            noise[j * imageRowPitch + i * pixelPitch] = i % 256;
+            noise[j * imageRowPitch + i * pixelPitch + 1] = j % 256;
+            noise[j * imageRowPitch + i * pixelPitch + 2] = 200;
+            noise[j * imageRowPitch + i * pixelPitch + 3] = 200;
+        }
+    }
     for (uint32_t i = 0; i < height; ++i) {
         memcpy(mapPtr + (i * staging->getDesc().width * pixelSize),
                noise.get() + (i * imageRowPitch),
@@ -174,4 +183,18 @@ nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi
     }
     device->unmapStagingTexture(staging);
     return new nvrhi::StagingTextureHandle(std::move(staging));
+}
+
+nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device) {
+    nvrhi::BufferDesc buffer_desc{};
+    const int width = 100;
+    const int height = 100;
+    const size_t pixelPitch = 4 * 8;
+    const uint32_t imageRowPitch = width * pixelPitch;
+    buffer_desc.format = nvrhi::Format::RGBA8_UNORM;
+    buffer_desc.byteSize = imageRowPitch * height;
+
+    auto buffer = device->createBuffer(buffer_desc);
+
+    return new nvrhi::BufferHandle(std::move(buffer));
 }

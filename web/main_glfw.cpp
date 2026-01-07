@@ -40,6 +40,7 @@ emscripten::val _iter(UserData &user_data) {
             "/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png",
             *user_data.nvrhi_device
         );
+        user_data.buffer = create_buffer(*user_data.nvrhi_device);
         user_data._stage = Stage::STAGING_CREATED;
     } else if (user_data._stage == Stage::STAGING_CREATED) {
         user_data._stage = Stage::EXITING;
