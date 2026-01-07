@@ -6,6 +6,7 @@
 #define ASYNC_TEST_WGPU_UTIL_H
 #include <GLFW/glfw3.h>
 #include <nvrhi/nvrhi.h>
+#include <nvrhi/webgpu.h>
 #include <webgpu/webgpu_cpp.h>
 #include <functional>
 
@@ -43,5 +44,12 @@ void request_adapter(const wgpu::Instance &instance,
 
 void request_device(const wgpu::Adapter &adapter, std::function<void(wgpu::Device &&)> callback);
 
-void create_surface(UserData &user_data);
+wgpu::Surface *create_surface(wgpu::Instance *instance);
+
+void configure_surface(
+    wgpu::Adapter *adapter,
+    wgpu::Device *device,
+    wgpu::Surface *surface,
+    int width, int height
+);
 #endif // ASYNC_TEST_WGPU_UTIL_H

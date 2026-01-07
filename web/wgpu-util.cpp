@@ -2,7 +2,6 @@
 // Created by Ingun Jon on 1/6/26.
 //
 #include "wgpu-util.h"
-#include <nvrhi/webgpu.h>
 
 #include <iostream>
 
@@ -44,10 +43,8 @@ void request_device(const wgpu::Adapter &adapter, std::function<void(wgpu::Devic
         });
 }
 
-void create_surface(UserData &user_data) {
+wgpu::Surface *create_surface(wgpu::Instance *instance) {
     std::cout << "Creating surface" << std::endl;
-    user_data.nvrhi_device = new nvrhi::DeviceHandle(
-        nvrhi::webgpu::createDevice({*user_data.device, *user_data.queue}));
 
     wgpu::EmscriptenSurfaceSourceCanvasHTMLSelector fromCanvasHTMLSelector;
     fromCanvasHTMLSelector.nextInChain = nullptr;
@@ -60,19 +57,23 @@ void create_surface(UserData &user_data) {
     surfaceDescriptor.nextInChain = &fromCanvasHTMLSelector;
     surfaceDescriptor.label.data = "canvas_surface";
     surfaceDescriptor.label.length = 14;
-    user_data.surface =
-            new wgpu::Surface(user_data.instance->CreateSurface(&surfaceDescriptor));
+    return new wgpu::Surface(instance->CreateSurface(&surfaceDescriptor));
+}
 
+void configure_surface(
+    wgpu::Adapter *adapter,
+    wgpu::Device *device,
+    wgpu::Surface *surface,
+    int width, int height
+) {
+    std::cout << "Configuring surface" << std::endl;
     wgpu::SurfaceCapabilities capabilities;
-    user_data.surface->GetCapabilities(*user_data.adapter, &capabilities);
+    surface->GetCapabilities(*adapter, &capabilities);
     wgpu::SurfaceConfiguration config = {};
-    config.device = *user_data.device;
+    config.device = *device;
     config.format = capabilities.formats[0];
-    config.width = user_data.width;
-    config.height = user_data.height;
+    config.width = width;
+    config.height = height;
     config.presentMode = capabilities.presentModes[0];
-    user_data.surface->Configure(&config);
-
-    std::cout << "Surface is created" << std::endl;
-    user_data._stage = Stage::INITIALIZED_ALL;
+    surface->Configure(&config);
 }

@@ -19,7 +19,12 @@ emscripten::val _iter(UserData &user_data) {
         });
     } else if (user_data._stage == Stage::INITIALIZED_DEVICE) {
         user_data.queue = new wgpu::Queue(user_data.device->GetQueue());
-        create_surface(user_data);
+        user_data.nvrhi_device = new nvrhi::DeviceHandle(
+            nvrhi::webgpu::createDevice({*user_data.device, *user_data.queue}));
+
+        user_data.surface = create_surface(user_data.instance);
+        configure_surface(user_data.adapter, user_data.device, user_data.surface, user_data.width, user_data.height);
+        user_data._stage = Stage::INITIALIZED_ALL;
     }
     return emscripten::val::undefined();
 }
