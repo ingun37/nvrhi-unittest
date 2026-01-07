@@ -52,12 +52,17 @@ emscripten::val _iter(UserData &user_data) {
                        user_data._stage = Stage::BUFFER_MAPPED;
                    });
     } else if (user_data._stage == Stage::BUFFER_MAPPED) {
-        if (user_data.count++ > 100) user_data._stage = Stage::COPY_READY;
-    } else if (user_data._stage == Stage::COPY_READY) {
+        if (user_data.count++ > 100) user_data._stage = Stage::BUFFER_COPY_READY;
+    } else if (user_data._stage == Stage::BUFFER_COPY_READY) {
         std::cout << "Copying buffer" << std::endl;
         copy_buffer(*user_data.nvrhi_device, *user_data.random_buffer, *user_data.buffer);
+        user_data._stage = Stage::BUFFER_COPIED;
+    } else if (user_data._stage == Stage::BUFFER_COPIED) {
+        if (user_data.count++ > 200) user_data._stage = Stage::BUFFER_READ_READY;
+    } else if (user_data._stage == Stage::BUFFER_READ_READY) {
+        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(user_data.map_ptr);
+        std::cout << ptr[0] << ptr[1] << ptr[2] << ptr[3] << std::endl;
         user_data._stage = Stage::EXITING;
-        std::cout << "Copying buffer end" << std::endl;
     } else if (user_data._stage == Stage::EXITING) {
         std::cout << "Exiting" << std::endl;
         user_data._stage = Stage::EXIT;
