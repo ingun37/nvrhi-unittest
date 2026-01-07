@@ -11,7 +11,7 @@
 #include "my_io.h"
 #include <algorithm>
 
-static nvrhi::Format format(const Image& img) {
+static nvrhi::Format format(const Image &img) {
     if (img.channel == 4) return nvrhi::Format::RGBA8_UNORM;
     throw std::runtime_error("invalid image channel");
 }
@@ -19,7 +19,7 @@ static nvrhi::Format format(const Image& img) {
 static nvrhi::TextureHandle create2DTexture(const uint32_t width,
                                             const uint32_t height,
                                             const nvrhi::Format format,
-                                            const nvrhi::DeviceHandle& device) {
+                                            const nvrhi::DeviceHandle &device) {
     nvrhi::TextureDesc dstTextureDesc{};
     dstTextureDesc.width = width;
     dstTextureDesc.height = height;
@@ -34,7 +34,7 @@ struct CommandSimple2DCopy : public App {
 
     CommandSimple2DCopy() = delete;
 
-    CommandSimple2DCopy(const Context& webGPU,
+    CommandSimple2DCopy(const Context &webGPU,
                         nvrhi::CommandListHandle commandList,
                         nvrhi::StagingTextureHandle stagingTexture)
         : App(webGPU, "Execute command to copy staged buffer to texture"),
@@ -64,7 +64,7 @@ struct CommandSimple2DCopy : public App {
 static nvrhi::StagingTextureHandle createStaging(uint32_t width,
                                                  uint32_t height,
                                                  const nvrhi::Format format,
-                                                 const nvrhi::DeviceHandle& device) {
+                                                 const nvrhi::DeviceHandle &device) {
     nvrhi::TextureDesc stagingTextureDesc{};
     stagingTextureDesc.width = width;
     stagingTextureDesc.height = height;
@@ -83,10 +83,10 @@ AppPtr Map2DStaging::run() {
     nvrhi::TextureSlice slice{};
     slice = slice.resolve(staging->getDesc());
     size_t pitch;
-    auto mapPtr = static_cast<uint8_t*>(context.nvrhiDevice->mapStagingTexture(staging,
-                                                                               slice,
-                                                                               nvrhi::CpuAccessMode::Write,
-                                                                               &pitch));
+    auto mapPtr = static_cast<uint8_t *>(context.nvrhiDevice->mapStagingTexture(staging,
+        slice,
+        nvrhi::CpuAccessMode::Write,
+        &pitch));
 
     const uint32_t imageRowPitch = image.data.size() / image.height;
     const uint32_t pixelSize = imageRowPitch / image.width;
@@ -98,6 +98,7 @@ AppPtr Map2DStaging::run() {
                pitch);
     }
 
+    std::cout << "Copy done" << std::endl;
     context.nvrhiDevice->unmapStagingTexture(staging);
 
     auto commandList = context.nvrhiDevice->createCommandList();

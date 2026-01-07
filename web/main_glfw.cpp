@@ -36,7 +36,16 @@ emscripten::val _iter(UserData &user_data) {
         user_data._stage = Stage::INITIALIZED_ALL;
         std::cout << "DONE!!" << std::endl;
     } else if (user_data._stage == Stage::INITIALIZED_ALL) {
-        // std::cout << "DONE!!" << std::endl;
+        user_data.staging = create_staging(
+            "/Users/ingun/CLionProjects/nvrhi-unit-test/uv_grid_opengl_small_remainder.png",
+            *user_data.nvrhi_device
+        );
+        user_data._stage = Stage::STAGING_CREATED;
+    } else if (user_data._stage == Stage::STAGING_CREATED) {
+        user_data._stage = Stage::EXITING;
+    } else if (user_data._stage == Stage::EXITING) {
+        std::cout << "Exiting" << std::endl;
+        user_data._stage = Stage::EXIT;
     }
     return emscripten::val::undefined();
 }

@@ -22,6 +22,9 @@ enum Stage {
     INITIALIZED_DEVICE,
     INITIALIZED_SURFACE,
     INITIALIZED_ALL,
+    STAGING_CREATED,
+    EXITING,
+    EXIT
 };
 
 struct Vertex {
@@ -42,6 +45,7 @@ struct UserData {
     wgpu::Surface *surface = nullptr;
     nvrhi::ShaderHandle *vertex_shader;
     nvrhi::ShaderHandle *pixel_shader;
+    nvrhi::StagingTextureHandle *staging;
 
     UserData() = delete;
 
@@ -68,4 +72,7 @@ void configure_surface(
 nvrhi::ShaderHandle *create_vertex_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
 
 nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
+
+nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi::DeviceHandle &device);
+
 #endif // ASYNC_TEST_WGPU_UTIL_H
