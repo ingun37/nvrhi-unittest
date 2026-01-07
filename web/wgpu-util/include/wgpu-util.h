@@ -22,7 +22,9 @@ enum Stage {
     INITIALIZED_DEVICE,
     INITIALIZED_SURFACE,
     INITIALIZED_ALL,
-    STAGING_CREATED,
+    BUFFER_CREATED,
+    COPY_READY,
+    BUFFER_MAPPED,
     EXITING,
     EXIT
 };
@@ -45,8 +47,10 @@ struct UserData {
     wgpu::Surface *surface = nullptr;
     nvrhi::ShaderHandle *vertex_shader;
     nvrhi::ShaderHandle *pixel_shader;
-    nvrhi::StagingTextureHandle *staging;
+    nvrhi::BufferHandle* random_buffer;
     nvrhi::BufferHandle* buffer;
+    int count = 0;
+    const void* map_ptr = nullptr;
 
     UserData() = delete;
 
@@ -74,9 +78,12 @@ nvrhi::ShaderHandle *create_vertex_shader(const std::string &shaderFilePath, nvr
 
 nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrhi::DeviceHandle &nvrhi_device);
 
-nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi::DeviceHandle &device);
+nvrhi::BufferHandle* create_random_buffer(nvrhi::DeviceHandle& device);
+
+void copy_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& from, nvrhi::BufferHandle& to);
 
 nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device);
-void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback);
+
+void map_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback);
 
 #endif // ASYNC_TEST_WGPU_UTIL_H

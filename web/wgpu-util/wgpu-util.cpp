@@ -143,30 +143,17 @@ nvrhi::ShaderHandle *create_pixel_shader(const std::string &shaderFilePath, nvrh
                                                 nvrhi_device));
 }
 
-nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi::DeviceHandle &device) {
-    nvrhi::TextureDesc stagingTextureDesc{};
+nvrhi::BufferHandle* create_random_buffer(nvrhi::DeviceHandle& device) {
+    nvrhi::BufferDesc desc{};
+    desc.debugName = "random buffer";
+    desc.canHaveUAVs = true;
     const int width = 100;
     const int height = 100;
-    stagingTextureDesc.width = width;
-    stagingTextureDesc.height = height;
-    stagingTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
-    auto staging = device->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
-
-    nvrhi::TextureSlice slice{};
-    slice = slice.resolve(staging->getDesc());
     const size_t pixelPitch = 4 * 8;
     const uint32_t imageRowPitch = width * pixelPitch;
-    size_t pitch;
-    auto mapPtr = static_cast<uint8_t *>(
-        device->mapStagingTexture(
-            staging,
-            slice,
-            nvrhi::CpuAccessMode::Write,
-            &pitch));
+    desc.byteSize = imageRowPitch * height;
+    auto buff = device->createBuffer(desc);
 
-    const uint32_t pixelSize = imageRowPitch / width;
-
-    std::cout << "Pitch: " << pitch << std::endl;
     auto noise = std::make_unique<uint8_t[]>(imageRowPitch * height);
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
@@ -176,13 +163,14 @@ nvrhi::StagingTextureHandle *create_staging(const std::string &image_path, nvrhi
             noise[j * imageRowPitch + i * pixelPitch + 3] = 200;
         }
     }
-    for (uint32_t i = 0; i < height; ++i) {
-        memcpy(mapPtr + (i * staging->getDesc().width * pixelSize),
-               noise.get() + (i * imageRowPitch),
-               pitch);
-    }
-    device->unmapStagingTexture(staging);
-    return new nvrhi::StagingTextureHandle(std::move(staging));
+
+    auto commandList = device->createCommandList();
+    commandList->open();
+    commandList->writeBuffer(buff, noise.get(), imageRowPitch * height);
+    commandList->close();
+    device->executeCommandList(commandList);
+
+    return new nvrhi::BufferHandle(std::move(buff));
 }
 
 nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device) {
@@ -200,6 +188,15 @@ nvrhi::BufferHandle* create_buffer(nvrhi::DeviceHandle& device) {
     return new nvrhi::BufferHandle(std::move(buffer));
 }
 
-void read_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback) {
+void copy_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& from, nvrhi::BufferHandle& to) {
+    auto commandList = device->createCommandList();
+    commandList->open();
+    commandList->copyBuffer(to, 0, from, 0, from->getDesc().byteSize);
+    commandList->close();
+    device->executeCommandList(commandList);
+}
+
+
+void map_buffer(nvrhi::DeviceHandle& device, nvrhi::BufferHandle& buffer, std::function<void(const void*)> callback) {
     device->mapBufferAsync(buffer, nvrhi::CpuAccessMode::Read, callback);
 }
