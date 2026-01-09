@@ -46,3 +46,10 @@ if (NVRHI_WITH_WEBGPU)
 elseif (NVRHI_WITH_VULKAN)
     add_subdirectory(vulkan-targets)
 endif ()
+
+add_executable(cpptest cpptest.cpp)
+target_link_libraries(
+        cpptest
+        GTest::gtest_main
+)
+gtest_discover_tests(cpptest)
