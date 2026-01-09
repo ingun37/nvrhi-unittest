@@ -27,7 +27,6 @@ add_subdirectory(my_math)
 add_subdirectory(Image)
 add_subdirectory(my_io)
 add_subdirectory(nvrhi-util)
-add_subdirectory(scenario)
 
 if (NOT EMSCRIPTEN)
     find_package(Threads)
@@ -86,12 +85,20 @@ else ()
 
     add_executable(cli_webgpu cli_webgpu.cpp)
     target_link_libraries(cli_webgpu
-            scenario
             nvrhi
             nvrhi_webgpu
             Image
     )
-    target_compile_options(scenario PUBLIC --use-port=contrib.glfw3 -lembind)
-    target_link_options(scenario PUBLIC --use-port=contrib.glfw3 -lembind)
+
+
+    add_executable(sequence sequence.cpp)
+    target_link_libraries(sequence
+            nvrhi
+            nvrhi_webgpu
+            my_math
+    )
+    target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
+    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
+
 endif ()
 
