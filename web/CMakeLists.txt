@@ -81,8 +81,8 @@ else ()
             my_math
             wgpu-util
     )
-    target_compile_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
-    target_link_options(main_glfw PUBLIC --use-port=contrib.glfw3 -lembind)
+    target_compile_options(main_glfw PUBLIC --use-port=contrib.glfw3)
+    target_link_options(main_glfw PUBLIC --use-port=contrib.glfw3)
 
     add_executable(cli_webgpu cli_webgpu.cpp)
     target_link_libraries(cli_webgpu

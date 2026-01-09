@@ -1,10 +1,9 @@
 #include <emscripten/html5.h>
-#include <emscripten/val.h>
 #include <iostream>
 
 #include "wgpu-util/include/wgpu-util.h"
 
-emscripten::val _iter(UserData &user_data) {
+void _iter(UserData& user_data) {
     if (user_data._stage == Stage::UNINITIALIZED) {
         user_data._stage = Stage::INITIALIZING_ADAPTER;
         request_adapter(*user_data.instance, [&](wgpu::Adapter &&adapter) {
@@ -80,7 +79,6 @@ emscripten::val _iter(UserData &user_data) {
         std::cout << "Exiting" << std::endl;
         user_data._stage = Stage::EXIT;
     }
-    return emscripten::val::undefined();
 }
 
 bool one_iter(double time, void *_userData) {
