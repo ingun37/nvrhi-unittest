@@ -52,7 +52,7 @@ struct CommandSimple3DCopy : public App {
         nvrhi::TextureSlice defaultDstSlice = nvrhi::TextureSlice().resolve(dstTexture->getDesc());
 
         std::cout <<
-            "Input Destination Texture slice origin. Default is (dst.size - src.size)/2. Size is set to src staging texture size"
+            "Input Destination Texture slice origin. Default is (dst.size - src.size)/2. Size is set to src staging texture size. You may want to start capturing from Metal debugger here."
             << std::endl;
         auto dstOrigin = my_io::read_Origin3D((defaultDstSlice.width - stagingTexture->getDesc().width) / 2,
                                               (defaultDstSlice.height - stagingTexture->getDesc().height) / 2,
@@ -81,7 +81,7 @@ AppPtr Map3DStaging::run() {
     const uint32_t depth = 16;
     for (int i = 0; i < depth; ++i) {
         images.push_back(
-            Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/3d-texture/" + std::to_string(i) + ".png"));
+            Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/native/3d-texture/" + std::to_string(i) + ".png"));
     }
 
     auto sampleImage = images[0];
