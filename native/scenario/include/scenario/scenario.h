@@ -12,6 +12,7 @@ enum struct Scenario {
     COPY_3D,
     MAP_2D_STAGING,
     MAP_3D_STAGING,
+    MAP_3D_STAGING_MIPMAP,
     SHADER
 };
 

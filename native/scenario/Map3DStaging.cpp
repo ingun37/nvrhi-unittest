@@ -24,13 +24,13 @@ static nvrhi::TextureHandle create3DTexture(const uint32_t width,
 }
 
 
-struct CommandSimple3DCopy : public App {
+struct Command3DCopyMipMap : public App {
     nvrhi::CommandListHandle commandList;
     nvrhi::StagingTextureHandle stagingTexture;
 
-    CommandSimple3DCopy() = delete;
+    Command3DCopyMipMap() = delete;
 
-    CommandSimple3DCopy(const Context& webGPU,
+    Command3DCopyMipMap(const Context& webGPU,
                         nvrhi::CommandListHandle commandList,
                         nvrhi::StagingTextureHandle stagingTexture)
         : App(webGPU, "Execute command to copy staged buffer to texture"),
@@ -72,7 +72,7 @@ struct CommandSimple3DCopy : public App {
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
 
-        return std::make_unique<CommandSimple3DCopy>(*this);
+        return std::make_unique<Command3DCopyMipMap>(*this);
     }
 };
 
@@ -122,7 +122,7 @@ AppPtr Map3DStaging::run() {
 
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return std::make_unique<CommandSimple3DCopy>(context,
+    return std::make_unique<Command3DCopyMipMap>(context,
                                                  commandList,
                                                  staging);
 }

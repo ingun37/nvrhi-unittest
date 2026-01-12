@@ -10,6 +10,7 @@
 #include "Copy3D.h"
 #include "Map2DStaging.h"
 #include "Map3DStaging.h"
+#include "Map3DStagingMipMap.h"
 #include "Shader.h"
 
 AppPtr app_factory(Scenario scenario, Context&& webGpu) {
@@ -22,6 +23,8 @@ AppPtr app_factory(Scenario scenario, Context&& webGpu) {
             return std::make_unique<Map2DStaging>(webGpu);
         case Scenario::MAP_3D_STAGING:
             return std::make_unique<Map3DStaging>(webGpu);
+        case Scenario::MAP_3D_STAGING_MIPMAP:
+            return std::make_unique<Map3DStagingMipMap>(webGpu);
         case Scenario::SHADER:
             return std::make_unique<Shader>(webGpu);
         default:
@@ -39,6 +42,7 @@ void run_app(Context&& webGpu) {
         std::cout << "3: Copy 3D" << std::endl;
         std::cout << "4: Map 2D Staging" << std::endl;
         std::cout << "5: Map 3D Staging" << std::endl;
+        std::cout << "6: Map 3D Staging Mipmap" << std::endl;
         std::cout << "Type 'exit' to quit." << std::endl;
         std::cout << "Select a scenario: ";
 
@@ -51,6 +55,7 @@ void run_app(Context&& webGpu) {
         else if (input == "3") scenario = Scenario::COPY_3D;
         else if (input == "4") scenario = Scenario::MAP_2D_STAGING;
         else if (input == "5") scenario = Scenario::MAP_3D_STAGING;
+        else if (input == "6") scenario = Scenario::MAP_3D_STAGING_MIPMAP;
         else {
             std::cout << "Invalid selection. Try again." << std::endl;
             continue;
