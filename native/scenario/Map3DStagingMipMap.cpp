@@ -7,7 +7,6 @@
 #include <iostream>
 #include <ranges>
 #include <algorithm>
-#include "my_io.h"
 #include "nvrhi_util.h"
 
 static nvrhi::TextureHandle create3DTexture(const uint32_t width,
@@ -34,18 +33,29 @@ AppPtr Command3DCopyMipMap::run()  {
                                       context.nvrhiDevice);
     nvrhi::TextureSlice defaultDstSlice = nvrhi::TextureSlice().resolve(dstTexture->getDesc());
 
-    nvrhi::TextureSlice dstSlice(defaultDstSlice);
-    dstSlice.x = 10;
-    dstSlice.y = 10;
-    dstSlice.z = 1;
-    dstSlice.width = stagingTexture->getDesc().width;
-    dstSlice.height = stagingTexture->getDesc().height;
-    dstSlice.depth = 2;
+    nvrhi::TextureSlice dst1Slice(defaultDstSlice);
+    dst1Slice.x = 10;
+    dst1Slice.y = 10;
+    dst1Slice.z = 1;
+    dst1Slice.width = stagingTexture->getDesc().width;
+    dst1Slice.height = stagingTexture->getDesc().height;
+    dst1Slice.depth = 2;
 
-    nvrhi::TextureSlice srcSlice = nvrhi::TextureSlice{.depth=2}.resolve(stagingTexture->getDesc());
+    nvrhi::TextureSlice src1Slice = nvrhi::TextureSlice{.depth=2}.resolve(stagingTexture->getDesc());
+
+    nvrhi::TextureSlice dst2Slice(defaultDstSlice);
+    dst2Slice.x = 500;
+    dst2Slice.y = 500;
+    dst2Slice.z = 2;
+    dst2Slice.width = 100;
+    dst2Slice.height = 100;
+    dst2Slice.depth = 2;
+
+    nvrhi::TextureSlice src2Slice = nvrhi::TextureSlice{.mipLevel = 1,.depth=2}.resolve(stagingTexture->getDesc());
 
     commandList->open();
-    commandList->copyTexture(dstTexture, dstSlice, stagingTexture, srcSlice);
+    commandList->copyTexture(dstTexture, dst1Slice, stagingTexture, src1Slice);
+    commandList->copyTexture(dstTexture, dst2Slice, stagingTexture, src2Slice);
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
