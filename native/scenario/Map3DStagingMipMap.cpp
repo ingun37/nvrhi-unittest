@@ -33,33 +33,52 @@ AppPtr Command3DCopyMipMap::run()  {
                                       context.nvrhiDevice);
     nvrhi::TextureSlice defaultDstSlice = nvrhi::TextureSlice().resolve(dstTexture->getDesc());
 
+    nvrhi::TextureSlice src1Slice = nvrhi::TextureSlice{
+            .depth = 2,
+            .mipLevel = static_cast<unsigned int>(mipLevel)}.
+        resolve(stagingTexture->getDesc());
+
     nvrhi::TextureSlice dst1Slice(defaultDstSlice);
     dst1Slice.x = 10;
     dst1Slice.y = 10;
     dst1Slice.z = 1;
-    dst1Slice.width = stagingTexture->getDesc().width;
-    dst1Slice.height = stagingTexture->getDesc().height;
+    dst1Slice.width = src1Slice.width;
+    dst1Slice.height = src1Slice.height;
     dst1Slice.depth = 2;
 
-    nvrhi::TextureSlice src1Slice = nvrhi::TextureSlice{.depth=2}.resolve(stagingTexture->getDesc());
-
-    nvrhi::TextureSlice dst2Slice(defaultDstSlice);
-    dst2Slice.x = 500;
-    dst2Slice.y = 500;
-    dst2Slice.z = 2;
-    dst2Slice.width = 100;
-    dst2Slice.height = 100;
-    dst2Slice.depth = 2;
-
-    nvrhi::TextureSlice src2Slice = nvrhi::TextureSlice{.mipLevel = 1,.depth=2}.resolve(stagingTexture->getDesc());
 
     commandList->open();
     commandList->copyTexture(dstTexture, dst1Slice, stagingTexture, src1Slice);
-    commandList->copyTexture(dstTexture, dst2Slice, stagingTexture, src2Slice);
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
     return std::make_unique<Command3DCopyMipMap>(*this);
+}
+
+AppPtr WriteStagingBuffer::run() {
+    auto slice = nvrhi::TextureSlice{.mipLevel = static_cast<unsigned int>(mipLevel)}.resolve(staging->getDesc());
+
+    size_t row_pitch;
+    auto* mapPtr = static_cast<uint8_t*>(context.nvrhiDevice->mapStagingTexture(staging,
+        slice,
+        nvrhi::CpuAccessMode::Write,
+        &row_pitch));
+    std::cout << "mipLevel: " << mipLevel << ", Row pitch: " << row_pitch << std::endl;
+    size_t slice_pitch = row_pitch * slice.height;
+    for (uint32_t i = 0; i < slice.depth; ++i) {
+        for (uint32_t j = 0; j < slice.height; ++j) {
+            memcpy(mapPtr + (i * slice_pitch) + (j * row_pitch),
+                   images[mipLevel][i].data.data() + (j * row_pitch),
+                   row_pitch);
+        }
+    }
+    context.nvrhiDevice->unmapStagingTexture(staging);
+    auto commandList = context.nvrhiDevice->createCommandList();
+
+    return std::make_unique<Command3DCopyMipMap>(context,
+                                                 std::move(commandList),
+                                                 std::move(staging),
+                                                 mipLevel);
 }
 
 AppPtr Map3DStagingMipMap::run() {
@@ -83,36 +102,18 @@ AppPtr Map3DStagingMipMap::run() {
     stagingTextureDesc.mipLevels = mipLevels;
     stagingTextureDesc.dimension = nvrhi::TextureDimension::Texture3D;
     auto staging = this->context.nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
+    int mipLevelInput;
+    std::cout << "Enter mip level (0 or 1): ";
+    std::cin >> mipLevelInput;
 
-    for (uint32_t mipIdx = 0; mipIdx < mipLevels; ++mipIdx) {
-
-
-        auto slice = nvrhi::TextureSlice{
-            .mipLevel = mipIdx
-        }.resolve(staging->getDesc());
-
-        size_t row_pitch;
-        auto mapPtr = static_cast<uint8_t*>(context.nvrhiDevice->mapStagingTexture(staging,
-                                                                                   slice,
-                                                                                   nvrhi::CpuAccessMode::Write,
-                                                                                   &row_pitch));
-        size_t slice_pitch = row_pitch * slice.height;
-        for (uint32_t i = 0; i < slice.depth; ++i) {
-            for (uint32_t j = 0; j < slice.height; ++j) {
-                memcpy(mapPtr + (i * slice_pitch) + (j * row_pitch),
-                       images[mipIdx][i].data.data() + (j * row_pitch),
-                       row_pitch);
-            }
-        }
-        context.nvrhiDevice->unmapStagingTexture(staging);
+    // Validate input
+    if (mipLevelInput != 0 && mipLevelInput != 1) {
+        std::cerr << "Invalid input. Defaulting to 0." << std::endl;
+        mipLevelInput = 0;
     }
 
-
-
-
-    auto commandList = context.nvrhiDevice->createCommandList();
-
-    return std::make_unique<Command3DCopyMipMap>(context,
-                                                 std::move(commandList),
-                                                 std::move(staging));
+    return std::make_unique<WriteStagingBuffer>(context,
+                                                std::move(staging),
+                                                std::move(images),
+                                                mipLevelInput);
 }
