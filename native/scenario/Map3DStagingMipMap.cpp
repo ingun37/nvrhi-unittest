@@ -67,8 +67,10 @@ AppPtr WriteStagingBuffer::run() {
     size_t slice_pitch = row_pitch * slice.height;
     for (uint32_t i = 0; i < slice.depth; ++i) {
         for (uint32_t j = 0; j < slice.height; ++j) {
+            const Image& image = images[mipLevel][i];
+            int image_row_pitch = image.data.size() / image.height;
             memcpy(mapPtr + (i * slice_pitch) + (j * row_pitch),
-                   images[mipLevel][i].data.data() + (j * row_pitch),
+                   images[mipLevel][i].data.data() + (j * image_row_pitch),
                    row_pitch);
         }
     }
@@ -99,18 +101,11 @@ AppPtr Map3DStagingMipMap::run() {
     stagingTextureDesc.height = sample_image.height;
     stagingTextureDesc.depth = depth;
     stagingTextureDesc.format = nvrhi::Format::RGBA8_UNORM;
-    stagingTextureDesc.mipLevels = mipLevels;
+    stagingTextureDesc.mipLevels = 1;
     stagingTextureDesc.dimension = nvrhi::TextureDimension::Texture3D;
     auto staging = this->context.nvrhiDevice->createStagingTexture(stagingTextureDesc, nvrhi::CpuAccessMode::Write);
-    int mipLevelInput;
-    std::cout << "Enter mip level (0 or 1): ";
-    std::cin >> mipLevelInput;
-
-    // Validate input
-    if (mipLevelInput != 0 && mipLevelInput != 1) {
-        std::cerr << "Invalid input. Defaulting to 0." << std::endl;
-        mipLevelInput = 0;
-    }
+    int mipLevelInput = 0;
+    std::cout << "WebGPU backend doesn't support mipmapping for staging texture. Defaulting to mip level 0.";
 
     return std::make_unique<WriteStagingBuffer>(context,
                                                 std::move(staging),
