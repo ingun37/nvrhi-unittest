@@ -4,15 +4,18 @@
 #include <memory>
 #include "ChooseApp.h"
 #include "Map3DStagingMipMap.h"
+#include "MapStagingAsync.h"
 
-
-AppPtr app_factory(int scenario, const Context& webGpu) {
+AppPtr app_factory(int scenario, const Context& context) {
     if (scenario < 0 || scenario >= std::size(scenarios)) {
         throw std::runtime_error("Invalid scenario");
     }
 
     if (scenarios[scenario] == "MAP_3D_STAGING_MIPMAP") {
-        return std::make_unique<Map3DStagingMipMap>(webGpu);
+        return std::make_unique<Map3DStagingMipMap>(context);
+    }
+    if (scenarios[scenario] == "MapStagingAsync") {
+        return std::make_unique<MapStagingAsync>(context);
     }
 
     throw std::runtime_error("Scenario not implemented in factory");
