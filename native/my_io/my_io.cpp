@@ -9,183 +9,187 @@
 #include <vector>
 
 namespace my_io {
-Rect read_rect(uint32_t default_x, uint32_t default_y, uint32_t default_width, uint32_t default_height) {
-    std::cout << "Enter x, y, width, height (comma separated)." << std::endl;
-    std::cout << "Defaults: " << default_x << ", " << default_y << ", " << default_width << ", " << default_height <<
-        std::endl;
-    std::cout << "Skip an input by leaving it empty (e.g., ',,100,')." << std::endl;
-    std::cout << "> ";
+std::string prompt_rect(uint32_t default_x, uint32_t default_y, uint32_t default_width, uint32_t default_height) {
+    return "Enter x, y, width, height (comma separated).\n"
+           "Defaults: " + std::to_string(default_x) + ", " + std::to_string(default_y) + ", " +
+           std::to_string(default_width) + ", " + std::to_string(default_height) + "\n"
+           "Skip an input by leaving it empty (e.g., ',,100,').\n> ";
+}
 
-    Rect result = {default_x, default_y, default_width, default_height};
 
-    std::string input;
-    if (!std::getline(std::cin, input) || input.empty()) {
-        return result;
-    }
+Rect parse_rect(const std::string& input) {
+    Rect result = {0, 0, 0, 0};
+    if (input.empty()) return result;
 
     std::stringstream ss(input);
     std::string segment;
     uint32_t* targets[] = {&result.x, &result.y, &result.width, &result.height};
-    uint32_t defaults[] = {default_x, default_y, default_width, default_height};
 
     for (int i = 0; i < 4; ++i) {
         if (std::getline(ss, segment, ',')) {
-            // Trim whitespace
             segment.erase(0, segment.find_first_not_of(" \t"));
             size_t last = segment.find_last_not_of(" \t");
-            if (last != std::string::npos) {
-                segment.erase(last + 1);
-            }
+            if (last != std::string::npos) segment.erase(last + 1);
 
             if (!segment.empty()) {
                 try {
                     *targets[i] = static_cast<uint32_t>(std::stoul(segment));
                 } catch (...) {
-                    *targets[i] = defaults[i];
+                    *targets[i] = 0;
                 }
             } else {
-                *targets[i] = defaults[i];
+                *targets[i] = 0;
             }
         } else {
-            *targets[i] = defaults[i];
+            *targets[i] = 0;
         }
     }
-
     return result;
 }
-Box read_box(uint32_t default_x,
-             uint32_t default_y,
-             uint32_t default_z,
-             uint32_t default_width,
-             uint32_t default_height,
-             uint32_t default_depth) {
-    std::cout << "Enter x, y, z, width, height, depth (comma separated)." << std::endl;
-    std::cout << "Defaults: " << default_x << ", " << default_y << ", " << default_z << ", "
-        << default_width << ", " << default_height << ", " << default_depth << std::endl;
-    std::cout << "Skip an input by leaving it empty (e.g., ',,,,100,')." << std::endl;
-    std::cout << "> ";
 
-    Box result = {default_x, default_y, default_z, default_width, default_height, default_depth};
+std::string default_input_rect(uint32_t default_x,
+                               uint32_t default_y,
+                               uint32_t default_width,
+                               uint32_t default_height) {
+    return std::to_string(default_x) + "," + std::to_string(default_y) + "," +
+           std::to_string(default_width) + "," + std::to_string(default_height);
+}
 
-    std::string input;
-    if (!std::getline(std::cin, input) || input.empty()) {
-        return result;
-    }
+std::string prompt_box(uint32_t default_x,
+                       uint32_t default_y,
+                       uint32_t default_z,
+                       uint32_t default_width,
+                       uint32_t default_height,
+                       uint32_t default_depth) {
+    return "Enter x, y, z, width, height, depth (comma separated).\n"
+           "Defaults: " + std::to_string(default_x) + ", " + std::to_string(default_y) + ", " +
+           std::to_string(default_z) + ", " + std::to_string(default_width) + ", " +
+           std::to_string(default_height) + ", " + std::to_string(default_depth) + "\n"
+           "Skip an input by leaving it empty (e.g., ',,,,100,').\n> ";
+}
+
+
+Box parse_box(const std::string& input) {
+    Box result = {0, 0, 0, 0, 0, 0};
+    if (input.empty()) return result;
 
     std::stringstream ss(input);
     std::string segment;
     uint32_t* targets[] = {&result.x, &result.y, &result.z, &result.width, &result.height, &result.depth};
-    uint32_t defaults[] = {default_x, default_y, default_z, default_width, default_height, default_depth};
 
     for (int i = 0; i < 6; ++i) {
         if (std::getline(ss, segment, ',')) {
-            // Trim whitespace
             segment.erase(0, segment.find_first_not_of(" \t"));
             size_t last = segment.find_last_not_of(" \t");
-            if (last != std::string::npos) {
-                segment.erase(last + 1);
-            }
+            if (last != std::string::npos) segment.erase(last + 1);
 
             if (!segment.empty()) {
                 try {
                     *targets[i] = static_cast<uint32_t>(std::stoul(segment));
                 } catch (...) {
-                    *targets[i] = defaults[i];
+                    *targets[i] = 0;
                 }
             } else {
-                *targets[i] = defaults[i];
+                *targets[i] = 0;
             }
         } else {
-            *targets[i] = defaults[i];
+            *targets[i] = 0;
         }
     }
-
     return result;
 }
 
-Extent3D read_Extent3D(uint32_t default_width, uint32_t default_height, uint32_t default_depth) {
-    std::cout << "Enter width, height, depth (comma separated)." << std::endl;
-    std::cout << "Defaults: " << default_width << ", " << default_height << ", " << default_depth << std::endl;
-    std::cout << "Skip an input by leaving it empty (e.g., ',100,')." << std::endl;
-    std::cout << "> ";
+std::string default_input_box(uint32_t default_x,
+                              uint32_t default_y,
+                              uint32_t default_z,
+                              uint32_t default_width,
+                              uint32_t default_height,
+                              uint32_t default_depth) {
+    return std::to_string(default_x) + "," + std::to_string(default_y) + "," + std::to_string(default_z) + "," +
+           std::to_string(default_width) + "," + std::to_string(default_height) + "," + std::to_string(default_depth);
+}
 
-    Extent3D result = {default_width, default_height, default_depth};
+std::string prompt_Extent3D(uint32_t default_width, uint32_t default_height, uint32_t default_depth) {
+    return "Enter width, height, depth (comma separated).\n"
+           "Defaults: " + std::to_string(default_width) + ", " +
+           std::to_string(default_height) + ", " + std::to_string(default_depth) + "\n"
+           "Skip an input by leaving it empty (e.g., ',100,').\n> ";
+}
 
-    std::string input;
-    if (!std::getline(std::cin, input) || input.empty()) {
-        return result;
-    }
+Extent3D parse_Extent3D(const std::string& input) {
+    Extent3D result = {0, 0, 0};
+    if (input.empty()) return result;
 
     std::stringstream ss(input);
     std::string segment;
     uint32_t* targets[] = {&result.width, &result.height, &result.depth};
-    uint32_t defaults[] = {default_width, default_height, default_depth};
 
     for (int i = 0; i < 3; ++i) {
         if (std::getline(ss, segment, ',')) {
             segment.erase(0, segment.find_first_not_of(" \t"));
             size_t last = segment.find_last_not_of(" \t");
-            if (last != std::string::npos) {
-                segment.erase(last + 1);
-            }
+            if (last != std::string::npos) segment.erase(last + 1);
 
             if (!segment.empty()) {
                 try {
                     *targets[i] = static_cast<uint32_t>(std::stoul(segment));
                 } catch (...) {
-                    *targets[i] = defaults[i];
+                    *targets[i] = 0;
                 }
             } else {
-                *targets[i] = defaults[i];
+                *targets[i] = 0;
             }
         } else {
-            *targets[i] = defaults[i];
+            *targets[i] = 0;
         }
     }
-
     return result;
 }
 
-Origin3D read_Origin3D(uint32_t default_x, uint32_t default_y, uint32_t default_z) {
-    std::cout << "Enter x, y, z (comma separated)." << std::endl;
-    std::cout << "Defaults: " << default_x << ", " << default_y << ", " << default_z << std::endl;
-    std::cout << "Skip an input by leaving it empty (e.g., ',,10')." << std::endl;
-    std::cout << "> ";
 
-    Origin3D result = {default_x, default_y, default_z};
+std::string default_input_Extent3D(uint32_t default_width, uint32_t default_height, uint32_t default_depth) {
+    return std::to_string(default_width) + "," + std::to_string(default_height) + "," + std::to_string(default_depth);
+}
 
-    std::string input;
-    if (!std::getline(std::cin, input) || input.empty()) {
-        return result;
-    }
+std::string prompt_Origin3D(uint32_t default_x, uint32_t default_y, uint32_t default_z) {
+    return "Enter x, y, z (comma separated).\n"
+           "Defaults: " + std::to_string(default_x) + ", " +
+           std::to_string(default_y) + ", " + std::to_string(default_z) + "\n"
+           "Skip an input by leaving it empty (e.g., ',,10').\n> ";
+}
+
+Origin3D parse_Origin3D(const std::string& input) {
+    Origin3D result = {0, 0, 0};
+    if (input.empty()) return result;
 
     std::stringstream ss(input);
     std::string segment;
     uint32_t* targets[] = {&result.x, &result.y, &result.z};
-    uint32_t defaults[] = {default_x, default_y, default_z};
 
     for (int i = 0; i < 3; ++i) {
         if (std::getline(ss, segment, ',')) {
             segment.erase(0, segment.find_first_not_of(" \t"));
             size_t last = segment.find_last_not_of(" \t");
-            if (last != std::string::npos) {
-                segment.erase(last + 1);
-            }
+            if (last != std::string::npos) segment.erase(last + 1);
 
             if (!segment.empty()) {
                 try {
                     *targets[i] = static_cast<uint32_t>(std::stoul(segment));
                 } catch (...) {
-                    *targets[i] = defaults[i];
+                    *targets[i] = 0;
                 }
             } else {
-                *targets[i] = defaults[i];
+                *targets[i] = 0;
             }
         } else {
-            *targets[i] = defaults[i];
+            *targets[i] = 0;
         }
     }
-
     return result;
+}
+
+
+std::string default_input_Origin3D(uint32_t default_x, uint32_t default_y, uint32_t default_z) {
+    return std::to_string(default_x) + "," + std::to_string(default_y) + "," + std::to_string(default_z);
 }
 }

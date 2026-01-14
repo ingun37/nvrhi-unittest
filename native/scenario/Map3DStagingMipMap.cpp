@@ -7,6 +7,8 @@
 #include <iostream>
 #include <ranges>
 #include <algorithm>
+
+#include "Termination.h"
 #include "nvrhi_util.h"
 
 static nvrhi::TextureHandle create3DTexture(const uint32_t width,
@@ -24,8 +26,7 @@ static nvrhi::TextureHandle create3DTexture(const uint32_t width,
 }
 
 
-AppPtr Command3DCopyMipMap::run()  {
-
+AppPtr Command3DCopyMipMap::run(std::string _) {
     auto dstTexture = create3DTexture(1010,
                                       1010,
                                       4,
@@ -52,10 +53,10 @@ AppPtr Command3DCopyMipMap::run()  {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return std::make_unique<Command3DCopyMipMap>(*this);
+    return std::make_unique<Termination>(context);
 }
 
-AppPtr WriteStagingBuffer::run() {
+AppPtr WriteStagingBuffer::run(std::string _) {
     auto slice = nvrhi::TextureSlice{.mipLevel = static_cast<unsigned int>(mipLevel)}.resolve(staging->getDesc());
 
     size_t row_pitch;
@@ -83,7 +84,7 @@ AppPtr WriteStagingBuffer::run() {
                                                  mipLevel);
 }
 
-AppPtr Map3DStagingMipMap::run() {
+AppPtr Map3DStagingMipMap::run(std::string _) {
     constexpr int depth = 16;
     constexpr int mipLevels = 2;
     const auto images = std::views::iota(0, mipLevels) | std::views::transform([](auto mip) {

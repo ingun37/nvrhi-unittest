@@ -14,14 +14,21 @@ struct App {
     virtual ~App() = default;
 
     const Context& context;
-    const std::string title;
+    std::string title;
+    std::string prompt;
+    std::string defaultInput;
 
-    App(const Context& webGpu, std::string title)
+    App(const Context& webGpu, std::string title, std::string prompt, std::string defaultInput)
         : context(webGpu),
-          title(std::move(title)) {
+          title(std::move(title)),
+          prompt(std::move(prompt)),
+          defaultInput(std::move(defaultInput)) {
     }
 
-    virtual std::unique_ptr<App> run() =0;
+    App() = delete;
+
+
+    virtual std::unique_ptr<App> run(std::string input) =0;
 };
 
 using AppPtr = std::unique_ptr<App>;

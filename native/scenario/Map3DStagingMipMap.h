@@ -21,13 +21,13 @@ int mipLevel;
                         nvrhi::CommandListHandle&& commandList,
                         nvrhi::StagingTextureHandle&& stagingTexture,
                         int mipLevel)
-        : App(webGPU, "[Command3DCopyMipMap] copy staging to texture "),
+        : App(webGPU, "[Command3DCopyMipMap] copy staging to texture ", "", ""),
           commandList(std::move(commandList)),
           stagingTexture(std::move(stagingTexture)),
           mipLevel(mipLevel) {
     }
 
-    AppPtr run() override ;
+    AppPtr run(std::string _) override;
 };
 
 struct WriteStagingBuffer : public App {
@@ -41,23 +41,23 @@ struct WriteStagingBuffer : public App {
                        nvrhi::StagingTextureHandle&& hdl,
                        const std::vector<std::vector<Image> >&& images,
                        int mipLevel)
-        : App(ctx, "Write Staging Texture"),
+        : App(ctx, "Write Staging Texture", "", ""),
           staging(std::move(hdl)),
           images(std::move(images)),
           mipLevel(mipLevel) {
     };
 
-    AppPtr run() override;
+    AppPtr run(std::string) override;
 };
 
 struct Map3DStagingMipMap : public App {
     Map3DStagingMipMap() = delete;
 
     Map3DStagingMipMap(const Context& ctx)
-        : App(ctx, "Map 3D Staging Texture MipMap") {
+        : App(ctx, "Map 3D Staging Texture MipMap", "", "") {
     }
 
-    AppPtr run() override;
+    AppPtr run(std::string) override;
 };
 
 #endif //NVRHI_UNIT_TEST_MAP3DSTAGINGMIPMAP_H

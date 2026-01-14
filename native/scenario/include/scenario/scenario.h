@@ -7,14 +7,6 @@
 
 #include "Context.h"
 
-enum struct Scenario {
-    COPY_2D_STAGING_TO_TEXTURE,
-    COPY_3D,
-    MAP_2D_STAGING,
-    MAP_3D_STAGING,
-    MAP_3D_STAGING_MIPMAP,
-    SHADER
-};
 
 void run_app(Context&& webGpu);
 
