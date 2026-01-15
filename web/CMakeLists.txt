@@ -93,8 +93,8 @@ else ()
             my_math
             scenario
     )
-    target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
-    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind --shell-file "${CMAKE_SOURCE_DIR}/sequence.html")
+    target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind -sNO_DISABLE_EXCEPTION_CATCHING)
+    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind --shell-file "${CMAKE_SOURCE_DIR}/sequence.html" -sNO_DISABLE_EXCEPTION_CATCHING)
 
 endif ()
 

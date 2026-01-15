@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ostream>
 #include "Map3DStagingMipMap.h"
+#include "Termination.h"
 
 AppPtr VerifyStaging::run(std::string) {
     auto h = stagingTexture->getDesc().height;
@@ -18,7 +19,7 @@ AppPtr VerifyStaging::run(std::string) {
             assert(buffer_content[i * w + j] == base + j);
         }
     }
-    return immediate_null_app();
+    return immediate_app(std::make_unique<Termination>(context));
 }
 
 AppPtr ReadStaging::run(std::string _) {

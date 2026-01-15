@@ -19,6 +19,8 @@ enum Stage { Wait, Next };
 
 struct UserData {
     AppPtr app = nullptr;
+    std::future<AppP> future{};
+    AppP current_app = nullptr;
     GLFWwindow* window;
     int width;
     int height;
@@ -90,7 +92,7 @@ struct InitSurface : public App {
         config.presentMode = capabilities.presentModes[0];
         surface.Configure(&config);
         user_data.context = Context{nvrhi::webgpu::createDevice({user_data.device, queue})};
-        return std::make_unique<ChooseApp>(user_data.context);
+        return immediate_app(std::make_unique<ChooseApp>(user_data.context));
     }
 };
 
@@ -121,7 +123,7 @@ struct InitDevice : public App {
                 std::cout << "Device is created" << std::endl;
                 user_data.device = std::move(dv);
             });
-        return std::make_unique<InitSurface>(user_data);
+        return immediate_app(std::make_unique<InitSurface>(user_data));
     }
 };
 
@@ -154,21 +156,34 @@ struct InitAdapter : public App {
                 }
                 user_data.adapter = std::move(ad);
             });
-        return std::make_unique<InitDevice>(user_data);
+        return immediate_app(std::make_unique<InitDevice>(user_data));
     }
 };
 
 void _iter(UserData& user_data) {
-    if (g_input == nullptr) {
-    } else {
-        if (user_data.app == nullptr)
-            user_data.app = std::make_unique<InitAdapter>(user_data);
-        user_data.app = user_data.app->run(g_input->empty() ? user_data.app->defaultInput : *g_input);
+    if (user_data.app == nullptr && user_data.current_app == nullptr) {
+        user_data.app = immediate_app(std::make_unique<InitAdapter>(user_data));
+    }
+    if (user_data.app && !user_data.future.valid()) {
+        user_data.future = user_data.app->get_future();
+    }
+    if (user_data.app && user_data.future.valid()) {
+        auto state = user_data.future.wait_for(std::chrono::seconds(0));
+        if (state != std::future_status::ready) {
+            std::cout << "waiting ..." << std::endl;
+            return;
+        }
+        auto app = user_data.future.get();
+        std::cout << "Running: " << app->title << std::endl;
+        std::cout << app->prompt << std::endl;
+        std::cout << "Default value: " << app->defaultInput << std::endl;
+        user_data.current_app = std::move(app);
+        user_data.app = nullptr;
+        return;
+    }
 
-        std::cout << "Running: " << user_data.app->title << std::endl;
-        std::cout << user_data.app->prompt << std::endl;
-        std::cout << "Default value: " << user_data.app->defaultInput << std::endl;
-
+    if (g_input && user_data.current_app) {
+        user_data.app = user_data.current_app->run(g_input->empty() ? user_data.current_app->defaultInput : *g_input);
         g_input = nullptr;
     }
 }

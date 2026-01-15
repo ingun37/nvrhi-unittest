@@ -14,7 +14,7 @@ struct Termination : public App {
     }
 
     AppPtr run(std::string input) override {
-        return immediate_null_app();
+        return immediate_app(std::make_unique<Termination>(context));
     }
 };
 
