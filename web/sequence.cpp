@@ -26,6 +26,8 @@ struct UserData {
     wgpu::Adapter adapter = nullptr;
     wgpu::Device device = nullptr;
 
+    Context context{nullptr};
+
     UserData() = delete;
 
     explicit UserData(GLFWwindow* window, int width, int height, wgpu::Instance&& instance)
@@ -53,7 +55,7 @@ struct InitSurface : public App {
     InitSurface() = delete;
 
     InitSurface(UserData& user_data)
-        : App(Context(nvrhi::webgpu::createDevice({user_data.device, user_data.device.GetQueue()})),
+        : App(Context(nullptr),
               "Init Surface",
               "",
               ""),
@@ -87,7 +89,8 @@ struct InitSurface : public App {
         config.height = user_data.height;
         config.presentMode = capabilities.presentModes[0];
         surface.Configure(&config);
-        return std::make_unique<ChooseApp>(context);
+        user_data.context = Context{nvrhi::webgpu::createDevice({user_data.device, queue})};
+        return std::make_unique<ChooseApp>(user_data.context);
     }
 };
 
