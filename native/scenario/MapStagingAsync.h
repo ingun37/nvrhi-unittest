@@ -17,10 +17,14 @@ struct VerifyStaging : public App {
     explicit VerifyStaging(
         const Context& ctx,
         nvrhi::StagingTextureHandle stagingTexture,
-        nvrhi::BufferHandle buffer)
+        nvrhi::BufferHandle buffer,
+        std::vector<uint32_t> staging_content,
+        std::vector<uint32_t> buffer_content)
         : App(ctx, "Verify Staging", "", ""),
           stagingTexture(std::move(stagingTexture)),
-          buffer(std::move(buffer)) {
+          buffer(std::move(buffer)),
+          staging_content(std::move(staging_content)),
+          buffer_content(std::move(buffer_content)) {
     }
 
     AppPtr run(std::string) override;

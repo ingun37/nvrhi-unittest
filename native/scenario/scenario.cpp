@@ -10,8 +10,8 @@
 
 void run_app(Context&& ctx) {
     AppPtr app_p = immediate_app(std::make_unique<ChooseApp>(ctx));
-    while (true) {
-        auto app = app_p.get_future().get();
+    while (app_p != nullptr) {
+        auto app = app_p->get_future().get();
         if (app == nullptr) break;
         std::cout << app->title << std::endl;
         std::cout << app->prompt << std::endl;
