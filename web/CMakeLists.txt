@@ -94,7 +94,7 @@ else ()
             scenario
     )
     target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
-    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
+    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind --shell-file "${CMAKE_SOURCE_DIR}/sequence.html")
 
 endif ()
 
