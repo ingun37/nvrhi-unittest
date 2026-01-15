@@ -4,7 +4,7 @@
 
 #ifndef NVRHI_UNIT_TEST_MAPSTAGINGASYNC_H
 #define NVRHI_UNIT_TEST_MAPSTAGINGASYNC_H
-#include "App.h"
+#include "include/scenario/App.h"
 
 struct VerifyStaging : public App {
     std::vector<uint32_t> staging_content = {};

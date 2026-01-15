@@ -7,7 +7,7 @@
 
 
 
-#include "App.h"
+#include "include/scenario/App.h"
 #include "Image.h"
 
 struct Command3DCopyMipMap : public App {

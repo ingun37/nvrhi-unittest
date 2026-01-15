@@ -1,6 +1,6 @@
 add_library(scenario STATIC
         include/scenario/scenario.h
-        App.h
+        include/scenario/App.h
         include/scenario/Context.h
         Map3DStagingMipMap.cpp
         Map3DStagingMipMap.h

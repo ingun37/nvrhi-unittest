@@ -6,78 +6,41 @@
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu_cpp.h>
 #include <emscripten/bind.h>
+#include <scenario/scenario.h>
 
-struct App {
-    virtual ~App() = default;
-
-    const std::string title;
-
-    App(std::string title)
-        : title(std::move(title)) {
-    }
-
-    virtual void run(std::function<void(std::unique_ptr<App> app_ptr)>) =0;
-};
-
-using AppPtr = std::unique_ptr<App>;
+#include "../native/scenario/ChooseApp.h"
 
 
 using namespace emscripten;
-static std::string g_input;
+static std::unique_ptr<std::string> g_input;
 
-class AppRunner {
-    AppPtr app;
-
-public:
-    AppRunner() = delete;
-
-    AppRunner(AppPtr app)
-        : app(std::move(app)) {
-    }
-
-    void run() {
-        std::cout << "Running: " << app->title << std::endl;
-        app->run([this](AppPtr new_app) {
-            this->app = std::move(new_app);
-        });
-    }
-};
 
 enum Stage { Wait, Next };
 
 struct UserData {
-    AppRunner* app_runner;
+    AppPtr app = nullptr;
+    GLFWwindow* window;
+    int width;
+    int height;
+    wgpu::Instance instance;
+    wgpu::Adapter adapter = nullptr;
+    wgpu::Device device = nullptr;
 
     UserData() = delete;
 
-    explicit UserData(
-        AppRunner* app_runner)
-        : app_runner(app_runner) {
+    explicit UserData(GLFWwindow* window, int width, int height, wgpu::Instance&& instance)
+        : window(window),
+          width(width),
+          height(height),
+          instance(std::move(instance)) {
     }
 };
 
-void _iter(UserData& user_data) {
-    if (g_input == "") {
-    } else {
-        std::cout << "input:" << g_input << std::endl;
-        user_data.app_runner->run();
-        g_input = "";
-    }
-}
-
-bool one_iter(double time, void* _userData) {
-    UserData* userData = static_cast<UserData*>(_userData);
-
-    _iter(*userData);
-    /* Poll for and process events */
-    glfwPollEvents();
-
-    return true;
-}
 
 
-void run_next_app() {
-    g_input = "a";
+
+void run_next_app(std::string input) {
+    g_input = std::make_unique<std::string>(std::move(input));
 }
 
 EMSCRIPTEN_BINDINGS(my_module) {
@@ -85,31 +48,20 @@ EMSCRIPTEN_BINDINGS(my_module) {
 }
 
 struct InitSurface : public App {
-    wgpu::Instance instance;
-    wgpu::Adapter adapter;
-    wgpu::Device device;
-    int width;
-    int height;
+    UserData& user_data;
 
     InitSurface() = delete;
 
-    InitSurface(GLFWwindow* window,
-                wgpu::Instance&& instance,
-                wgpu::Adapter&& adapter,
-                wgpu::Device device,
-                int width,
-                int height)
-        : App("Init Surface"),
-          instance(instance),
-          adapter(adapter),
-          device(std::move(device)),
-          width(width),
-          height(height) {
+    InitSurface(UserData& user_data)
+        : App(Context(nvrhi::webgpu::createDevice({user_data.device, user_data.device.GetQueue()})),
+              "Init Surface",
+              "",
+              ""),
+          user_data(user_data) {
     }
 
-    void run(std::function<void(std::unique_ptr<App> app_ptr)>) override {
-        auto queue = device.GetQueue();
-        auto nvrhi_device = new nvrhi::DeviceHandle(nvrhi::webgpu::createDevice({device, queue}));
+    AppPtr run(std::string _) override {
+        auto queue = user_data.device.GetQueue();
         std::cout << "Creating surface" << std::endl;
 
         wgpu::EmscriptenSurfaceSourceCanvasHTMLSelector fromCanvasHTMLSelector;
@@ -123,108 +75,110 @@ struct InitSurface : public App {
         surfaceDescriptor.nextInChain = &fromCanvasHTMLSelector;
         surfaceDescriptor.label.data = "canvas_surface";
         surfaceDescriptor.label.length = 14;
-        auto surface = instance.CreateSurface(&surfaceDescriptor);
+        auto surface = user_data.instance.CreateSurface(&surfaceDescriptor);
 
         std::cout << "Configuring surface" << std::endl;
         wgpu::SurfaceCapabilities capabilities;
-        surface.GetCapabilities(adapter, &capabilities);
+        surface.GetCapabilities(user_data.adapter, &capabilities);
         wgpu::SurfaceConfiguration config = {};
-        config.device = device;
+        config.device = user_data.device;
         config.format = capabilities.formats[0];
-        config.width = width;
-        config.height = height;
+        config.width = user_data.width;
+        config.height = user_data.height;
         config.presentMode = capabilities.presentModes[0];
         surface.Configure(&config);
-        throw new std::runtime_error("not implemented");
+        return std::make_unique<ChooseApp>(context);
     }
 };
 
 struct InitDevice : public App {
-    GLFWwindow* window;
-    wgpu::Instance instance;
-    wgpu::Adapter adapter;
-    int width;
-    int height;
+    UserData& user_data;
 
     InitDevice() = delete;
 
-    InitDevice(GLFWwindow* window,
-               wgpu::Instance&& instance,
-               wgpu::Adapter&& adapter,
-               int width,
-               int height)
-        : App("Init Device"),
-          window(window),
-          instance(instance),
-          adapter(adapter),
-          width(width),
-          height(height) {
+    InitDevice(UserData& user_data)
+        : App(Context(nullptr), "Init Device", "", ""),
+          user_data(user_data) {
     }
 
-    void run(std::function<void(std::unique_ptr<App> app_ptr)> callback) override {
+    AppPtr run(std::string _) override {
         wgpu::DeviceDescriptor deviceDesc = {};
         deviceDesc.nextInChain = nullptr;
         std::cout << "Requesting device" << std::endl;
-        adapter.RequestDevice(
+        user_data.adapter.RequestDevice(
             &deviceDesc,
             wgpu::CallbackMode::AllowSpontaneous,
-            [this,cb = std::move(callback)](wgpu::RequestDeviceStatus status,
-                                            wgpu::Device dv,
-                                            wgpu::StringView message) {
+            [&](wgpu::RequestDeviceStatus status,
+                wgpu::Device dv,
+                wgpu::StringView message) {
                 if (status != wgpu::RequestDeviceStatus::Success) {
                     std::cerr << "Failed to get an device: " << message.data;
                     throw std::runtime_error("Failed to get an device");
                 }
                 std::cout << "Device is created" << std::endl;
-                cb(std::make_unique<InitSurface>(window,
-                                                 std::move(instance),
-                                                 std::move(adapter),
-                                                 std::move(dv),
-                                                 width,
-                                                 height));
+                user_data.device = std::move(dv);
             });
+        return std::make_unique<InitSurface>(user_data);
     }
 };
 
 struct InitAdapter : public App {
-    GLFWwindow* window;
-    wgpu::Instance instance;
-    int width;
-    int height;
+    UserData& user_data;
 
     InitAdapter() = delete;
 
-    InitAdapter(GLFWwindow* window, wgpu::Instance&& instance, int width, int height)
-        : App("Init Adapter"),
-          window(window),
-          instance(instance),
-          width(width),
-          height(height) {
+    InitAdapter(UserData& user_data)
+        : App(Context(nullptr), "Init Adapter", "", ""),
+          user_data(user_data) {
     }
 
-    void run(std::function<void(std::unique_ptr<App> app_ptr)> callback) override {
+    AppPtr run(std::string _) override {
         std::cout << "Requesting adapter" << std::endl;
         wgpu::RequestAdapterOptions adapterOptions = {};
 
         adapterOptions.nextInChain = nullptr;
         adapterOptions.backendType = wgpu::BackendType::WebGPU;
 
-        instance.RequestAdapter(
+        user_data.instance.RequestAdapter(
             &adapterOptions,
             wgpu::CallbackMode::AllowSpontaneous,
-            [this,cb = std::move(callback)](wgpu::RequestAdapterStatus status,
-                                            wgpu::Adapter adapter,
-                                            wgpu::StringView message) {
+            [&](wgpu::RequestAdapterStatus status,
+                wgpu::Adapter ad,
+                wgpu::StringView message) {
                 if (status != wgpu::RequestAdapterStatus::Success) {
                     std::cerr << "Failed to get an adapter: " << message.data;
                     return;
-                } else {
-                    std::cout << "Adapter is created" << std::endl;
-                    cb(std::make_unique<InitDevice>(window, std::move(instance), std::move(adapter), width, height));
                 }
+                user_data.adapter = std::move(ad);
             });
+        return std::make_unique<InitDevice>(user_data);
     }
 };
+
+void _iter(UserData& user_data) {
+    if (g_input == nullptr) {
+    } else {
+        if (user_data.app == nullptr)
+            user_data.app = std::make_unique<InitAdapter>(user_data);
+        user_data.app = user_data.app->run(g_input->empty() ? user_data.app->defaultInput : *g_input);
+
+        std::cout << "Running: " << user_data.app->title << std::endl;
+        std::cout << user_data.app->prompt << std::endl;
+        std::cout << "Default value: " << user_data.app->defaultInput << std::endl;
+
+        g_input = nullptr;
+    }
+}
+
+bool one_iter(double time, void* _userData) {
+    UserData* userData = static_cast<UserData*>(_userData);
+
+    _iter(*userData);
+    /* Poll for and process events */
+    glfwPollEvents();
+
+    return true;
+}
 
 int main() {
     GLFWwindow* window;
@@ -242,7 +196,7 @@ int main() {
     }
 
     wgpu::InstanceDescriptor instanceDescriptor = {};
-    wgpu::Instance instance = wgpu::CreateInstance(&instanceDescriptor);
+    auto instance = wgpu::CreateInstance(&instanceDescriptor);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
@@ -250,7 +204,7 @@ int main() {
     /* Loop until the user closes the window */
     emscripten_request_animation_frame_loop(
         one_iter,
-        new UserData(new AppRunner(std::make_unique<InitAdapter>(window, std::move(instance), width, height))));
+        new UserData(window, width, height, std::move(instance)));
 
     // glfwTerminate();
     return 0;

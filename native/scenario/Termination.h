@@ -4,7 +4,7 @@
 
 #ifndef NVRHI_UNIT_TEST_TERMINATION_H
 #define NVRHI_UNIT_TEST_TERMINATION_H
-#include "App.h"
+#include "include/scenario/App.h"
 
 struct Termination : public App {
     Termination() = delete;

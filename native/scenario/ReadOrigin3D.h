@@ -6,7 +6,7 @@
 #define NVRHI_UNIT_TEST_READORIGIN3D_H
 
 
-#include "App.h"
+#include "include/scenario/App.h"
 #include <my_io.h>
 #include <functional>
 #include <utility>

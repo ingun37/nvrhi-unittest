@@ -6,7 +6,7 @@
 #define NVRHI_UNIT_TEST_SCENARIO_H
 
 #include "Context.h"
-
+#include "App.h"
 
 void run_app(Context&& webGpu);
 

@@ -4,7 +4,7 @@
 
 #ifndef NVRHI_UNIT_TEST_READRECT_H
 #define NVRHI_UNIT_TEST_READRECT_H
-#include "App.h"
+#include "include/scenario/App.h"
 #include <my_io.h>
 #include <functional>
 #include <utility>

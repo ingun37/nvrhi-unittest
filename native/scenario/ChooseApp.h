@@ -4,7 +4,7 @@
 
 #ifndef NVRHI_UNIT_TEST_CHOOSEAPP_H
 #define NVRHI_UNIT_TEST_CHOOSEAPP_H
-#include "App.h"
+#include "include/scenario/App.h"
 
 constexpr std::string_view scenarios[] = {
     "MAP_3D_STAGING_MIPMAP",

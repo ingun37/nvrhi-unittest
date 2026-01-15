@@ -24,8 +24,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nvrhi)
 
 add_subdirectory(my_math)
-add_subdirectory(Image)
-add_subdirectory(my_io)
 add_subdirectory(nvrhi-util)
 
 if (NOT EMSCRIPTEN)
@@ -83,19 +81,17 @@ else ()
     target_compile_options(main_glfw PUBLIC --use-port=contrib.glfw3)
     target_link_options(main_glfw PUBLIC --use-port=contrib.glfw3)
 
-    add_executable(cli_webgpu cli_webgpu.cpp)
-    target_link_libraries(cli_webgpu
-            nvrhi
-            nvrhi_webgpu
-            Image
-    )
-
+    add_subdirectory("${CMAKE_SOURCE_DIR}/../native/my_io" "${CMAKE_BINARY_DIR}/my_io")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/../native/scenario" "${CMAKE_BINARY_DIR}/scenario")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/../native/Image" "${CMAKE_BINARY_DIR}/Image")
+    target_compile_options(Image PUBLIC -pthread)
 
     add_executable(sequence sequence.cpp)
     target_link_libraries(sequence
             nvrhi
             nvrhi_webgpu
             my_math
+            scenario
     )
     target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
     target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind)
