@@ -9,14 +9,16 @@
 #include "ChooseApp.h"
 
 void run_app(Context&& ctx) {
-    AppPtr app = std::make_unique<ChooseApp>(ctx);
-    while (app != nullptr) {
+    AppPtr app_p = immediate_app(std::make_unique<ChooseApp>(ctx));
+    while (true) {
+        auto app = app_p.get_future().get();
+        if (app == nullptr) break;
         std::cout << app->title << std::endl;
         std::cout << app->prompt << std::endl;
         std::cout << "Default value: " << app->defaultInput << std::endl;
         std::cout << "> ";
         std::string input;
         std::getline(std::cin, input);
-        app = app->run(input.empty() ? app->defaultInput : input);
+        app_p = app->run(input.empty() ? app->defaultInput : input);
     }
 }

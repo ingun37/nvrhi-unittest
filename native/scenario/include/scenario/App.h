@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 #include <scenario/Context.h>
-
+#include <future>
 
 struct App {
     virtual ~App() = default;
@@ -28,9 +28,21 @@ struct App {
     App() = delete;
 
 
-    virtual std::unique_ptr<App> run(std::string input) =0;
+    virtual std::promise<std::unique_ptr<App> > run(std::string input) =0;
 };
 
-using AppPtr = std::unique_ptr<App>;
+using AppPtr = std::promise<std::unique_ptr<App> >;
 
+template <typename T> requires std::is_base_of_v<App, T>
+AppPtr immediate_app(std::unique_ptr<T> app) {
+    AppPtr promise;
+    promise.set_value(std::move(app));
+    return promise;
+}
+
+inline AppPtr immediate_null_app() {
+    AppPtr promise;
+    promise.set_value(nullptr);
+    return promise;
+}
 #endif //NVRHI_UNIT_TEST_APP_H

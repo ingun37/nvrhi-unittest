@@ -12,16 +12,16 @@ AppPtr app_factory(int scenario, const Context& context) {
     }
 
     if (scenarios[scenario] == "MAP_3D_STAGING_MIPMAP") {
-        return std::make_unique<Map3DStagingMipMap>(context);
+        return immediate_app(std::make_unique<Map3DStagingMipMap>(context));
     }
     if (scenarios[scenario] == "MapStagingAsync") {
-        return std::make_unique<MapStagingAsync>(context);
+        return immediate_app(std::make_unique<MapStagingAsync>(context));
     }
 
     throw std::runtime_error("Scenario not implemented in factory");
 }
 
-std::unique_ptr<App> ChooseApp::run(std::string input) {
+AppPtr ChooseApp::run(std::string input) {
     int scenarioNum = std::stoi(input); // Subtract 1 because UI list is 1-indexed
     return app_factory(scenarioNum,
                        context);

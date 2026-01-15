@@ -22,7 +22,7 @@ static std::string foo() {
 }
 
 struct ChooseApp : public App {
-    std::unique_ptr<App> run(std::string input) override;
+    AppPtr run(std::string input) override;
 
     explicit ChooseApp(const Context& ctx)
         : App(ctx, "Choose App", foo(), "0") {

@@ -14,7 +14,7 @@ struct Termination : public App {
     }
 
     AppPtr run(std::string input) override {
-        return nullptr;
+        return immediate_null_app();
     }
 };
 
