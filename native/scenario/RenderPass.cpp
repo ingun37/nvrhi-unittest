@@ -63,6 +63,16 @@ AppPtr RenderPass::run(std::string) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
+    nvrhi::GraphicsState state;
+    state.pipeline = pipeline;
+    state.framebuffer = framebuffer;
+    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
+    commandList->setGraphicsState(state);
+
+    nvrhi::DrawArguments args;
+    args.vertexCount = 3;
+    commandList->draw(args);
+
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
