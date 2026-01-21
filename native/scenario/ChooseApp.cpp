@@ -6,6 +6,7 @@
 #include "Map3DStagingMipMap.h"
 #include "MapStagingAsync.h"
 #include "RenderPass.h"
+#include "RenderPassDepthOnly.h"
 
 AppPtr app_factory(int scenario, const Context& context) {
     if (scenario < 0 || scenario >= std::size(scenarios)) {
@@ -20,6 +21,9 @@ AppPtr app_factory(int scenario, const Context& context) {
     }
     if (scenarios[scenario] == "RenderPass") {
         return immediate_app(std::make_unique<RenderPass>(context));
+    }
+    if (scenarios[scenario] == "RenderPassDepthOnly") {
+        return immediate_app(std::make_unique<RenderPassDepthOnly>(context));
     }
 
     throw std::runtime_error("Scenario not implemented in factory");

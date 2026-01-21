@@ -2,11 +2,12 @@
 // Created by Ingun Jon on 1/21/26.
 //
 
-#include "RenderPass.h"
+#include "RenderPassDepthOnly.h"
+
 
 #include "Termination.h"
 
-AppPtr RunDrawCommand::run(std::string) {
+AppPtr RunDepthDrawCommand::run(std::string) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
@@ -23,7 +24,7 @@ AppPtr RunDrawCommand::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app(std::make_unique<RunDrawCommand>(
+    return immediate_app(std::make_unique<RunDepthDrawCommand>(
         context,
         std::move(texture),
         std::move(vertex),
@@ -32,18 +33,18 @@ AppPtr RunDrawCommand::run(std::string) {
         std::move(pipeline)));
 }
 
-AppPtr RenderPass::run(std::string) {
+AppPtr RenderPassDepthOnly::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };
     const std::string vertexCode = R"(
-        const g_positions = array<vec2f, 3>(
-            vec2f(-0.5, -0.5),
-            vec2f(0.0, 0.5),
-            vec2f(0.5, -0.5)
+        const g_positions = array<vec3f, 3>(
+            vec3f(-0.5, -0.5, 0.1),
+            vec3f(0.0, 0.5, 0.2),
+            vec3f(0.5, -0.5, 0.3)
         );
         @vertex fn vs(@builtin(vertex_index) vertex_id: u32) -> @builtin(position) vec4f {
-            return vec4f(g_positions[vertex_id], 0.0, 1.0);
+            return vec4f(g_positions[vertex_id], 1.0);
         }
     )";
     nvrhi::ShaderDesc pixelDesc{
@@ -63,6 +64,7 @@ AppPtr RenderPass::run(std::string) {
     psoDesc.PS = pixel;
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     psoDesc.renderState.depthStencilState.depthTestEnable = false;
+    psoDesc.renderState.depthStencilState.depthWriteEnable = true;
 
     psoDesc.renderState.blendState.targets[0].blendEnable = true;
     psoDesc.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
@@ -72,24 +74,24 @@ AppPtr RenderPass::run(std::string) {
     psoDesc.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
     psoDesc.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
 
-    nvrhi::TextureDesc colorTextureDesc{};
-    colorTextureDesc.setHeight(256);
-    colorTextureDesc.setWidth(256);
-    colorTextureDesc.setFormat(nvrhi::Format::RGBA8_UNORM);
-    colorTextureDesc.setIsRenderTarget(true);
-    auto colorTexture = context.nvrhiDevice->createTexture(colorTextureDesc);
+    nvrhi::TextureDesc depthTextureDesc{};
+    depthTextureDesc.setHeight(256);
+    depthTextureDesc.setWidth(256);
+    depthTextureDesc.setFormat(nvrhi::Format::D32);
+    depthTextureDesc.setIsRenderTarget(true);
+    auto depthTexture = context.nvrhiDevice->createTexture(depthTextureDesc);
 
-    nvrhi::FramebufferAttachment colorAttachment{};
-    colorAttachment.setTexture(colorTexture);
+    nvrhi::FramebufferAttachment depthAttachment{};
+    depthAttachment.setTexture(depthTexture);
     nvrhi::FramebufferDesc framebufferDesc{};
-    framebufferDesc.addColorAttachment(colorAttachment);
+    framebufferDesc.setDepthAttachment(depthAttachment);
     auto framebuffer = context.nvrhiDevice->createFramebuffer(framebufferDesc);
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return immediate_app(std::make_unique<RunDrawCommand>(
+    return immediate_app(std::make_unique<RunDepthDrawCommand>(
         context,
-        std::move(colorTexture),
+        std::move(depthTexture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
