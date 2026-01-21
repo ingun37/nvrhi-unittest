@@ -6,6 +6,32 @@
 
 #include "Termination.h"
 
+AppPtr RunDrawCommand::run(std::string) {
+    auto commandList = context.nvrhiDevice->createCommandList();
+    commandList->open();
+
+    nvrhi::GraphicsState state;
+    state.pipeline = pipeline;
+    state.framebuffer = framebuffer;
+    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
+    commandList->setGraphicsState(state);
+
+    nvrhi::DrawArguments args;
+    args.vertexCount = 3;
+    commandList->draw(args);
+
+    commandList->close();
+    context.nvrhiDevice->executeCommandList(commandList);
+
+    return immediate_app(std::make_unique<RunDrawCommand>(
+        context,
+        std::move(texture),
+        std::move(vertex),
+        std::move(pixel),
+        std::move(framebuffer),
+        std::move(pipeline)));
+}
+
 AppPtr RenderPass::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
@@ -60,21 +86,11 @@ AppPtr RenderPass::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    auto commandList = context.nvrhiDevice->createCommandList();
-    commandList->open();
-
-    nvrhi::GraphicsState state;
-    state.pipeline = pipeline;
-    state.framebuffer = framebuffer;
-    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
-    commandList->setGraphicsState(state);
-
-    nvrhi::DrawArguments args;
-    args.vertexCount = 3;
-    commandList->draw(args);
-
-    commandList->close();
-    context.nvrhiDevice->executeCommandList(commandList);
-
-    return immediate_app(std::make_unique<Termination>(context));
+    return immediate_app(std::make_unique<RunDrawCommand>(
+        context,
+        std::move(texture),
+        std::move(vertex),
+        std::move(pixel),
+        std::move(framebuffer),
+        std::move(pipeline)));
 }
