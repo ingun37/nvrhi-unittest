@@ -18,6 +18,8 @@ add_library(scenario STATIC
         Termination.h
         scenario.cpp
         MapStagingAsync.cpp
-        MapStagingAsync.h)
+        MapStagingAsync.h
+        RenderPass.cpp
+        RenderPass.h)
 target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util)
 target_include_directories(scenario PUBLIC include PRIVATE .)

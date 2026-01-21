@@ -8,7 +8,8 @@
 
 constexpr std::string_view scenarios[] = {
     "MAP_3D_STAGING_MIPMAP",
-    "MapStagingAsync"
+    "MapStagingAsync",
+    "RenderPass"
 };
 
 
