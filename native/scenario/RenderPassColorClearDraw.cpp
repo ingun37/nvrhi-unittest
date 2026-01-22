@@ -1,13 +1,19 @@
 //
-// Created by Ingun Jon on 1/22/26.
+// Created by Ingun Jon on 1/21/26.
 //
 
-#include "RenderPassClearOnly.h"
-
+#include "RenderPassColorClearDraw.h"
 
 #include "Termination.h"
 
-AppPtr RunClearCommand::run(std::string) {
+AppPtr RunDrawCommand::run(std::string input) {
+    std::istringstream iss(input);
+    std::string clearStr, drawStr;
+    iss >> clearStr >> drawStr;
+
+    bool shouldClear = (clearStr == "true");
+    bool shouldDraw = (drawStr == "true");
+
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
@@ -17,12 +23,21 @@ AppPtr RunClearCommand::run(std::string) {
     state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
     commandList->setGraphicsState(state);
 
-    const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
-    commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
+    if (shouldClear) {
+        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
+        commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
+    }
+
+    if (shouldDraw) {
+        nvrhi::DrawArguments args;
+        args.vertexCount = 3;
+        commandList->draw(args);
+    }
+
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app(std::make_unique<RunClearCommand>(
+    return immediate_app(std::make_unique<RunDrawCommand>(
         context,
         std::move(texture),
         std::move(vertex),
@@ -31,21 +46,20 @@ AppPtr RunClearCommand::run(std::string) {
         std::move(pipeline)));
 }
 
-AppPtr RenderPassClearOnly::run(std::string) {
+AppPtr RenderPassColorClearDraw::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };
     const std::string vertexCode = R"(
-        const g_positions = array<vec3f, 3>(
-            vec3f(-0.5, -0.5, 0.1),
-            vec3f(0.0, 0.5, 0.2),
-            vec3f(0.5, -0.5, 0.3)
+        const g_positions = array<vec2f, 3>(
+            vec2f(-0.5, -0.5),
+            vec2f(0.0, 0.5),
+            vec2f(0.5, -0.5)
         );
         @vertex fn vs(@builtin(vertex_index) vertex_id: u32) -> @builtin(position) vec4f {
-            return vec4f(g_positions[vertex_id], 1.0);
+            return vec4f(g_positions[vertex_id], 0.0, 1.0);
         }
     )";
-    auto vertex = context.nvrhiDevice->createShader(vertexDesc, vertexCode.c_str(), vertexCode.size());
     nvrhi::ShaderDesc pixelDesc{
         .entryName = "fs"
     };
@@ -54,12 +68,13 @@ AppPtr RenderPassClearOnly::run(std::string) {
             return vec4f(1, 0, 0, 1);
         }
     )";
+
+    auto vertex = context.nvrhiDevice->createShader(vertexDesc, vertexCode.c_str(), vertexCode.size());
     auto pixel = context.nvrhiDevice->createShader(pixelDesc, pixelCode.c_str(), pixelCode.size());
 
     nvrhi::GraphicsPipelineDesc psoDesc;
     psoDesc.VS = vertex;
     psoDesc.PS = pixel;
-
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
     psoDesc.renderState.depthStencilState.depthTestEnable = false;
 
@@ -86,7 +101,7 @@ AppPtr RenderPassClearOnly::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return immediate_app(std::make_unique<RunClearCommand>(
+    return immediate_app(std::make_unique<RunDrawCommand>(
         context,
         std::move(colorTexture),
         std::move(vertex),

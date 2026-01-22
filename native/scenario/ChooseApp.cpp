@@ -5,9 +5,8 @@
 #include "ChooseApp.h"
 #include "Map3DStagingMipMap.h"
 #include "MapStagingAsync.h"
-#include "RenderPassColorDrawOnly.h"
+#include "RenderPassColorClearDraw.h"
 #include "RenderPassDepthOnly.h"
-#include "RenderPassClearOnly.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -43,9 +42,8 @@ struct AppRegistry {
 using MyScenarios = AppRegistry<
     Map3DStagingMipMap,
     MapStagingAsync,
-    RenderPassColorDrawOnly,
-    RenderPassDepthOnly,
-    RenderPassClearOnly
+    RenderPassColorClearDraw,
+    RenderPassDepthOnly
 >;
 
 std::string getPrompt() {
