@@ -6,28 +6,13 @@
 #define NVRHI_UNIT_TEST_CHOOSEAPP_H
 #include "include/scenario/App.h"
 
-constexpr std::string_view scenarios[] = {
-    "MAP_3D_STAGING_MIPMAP",
-    "MapStagingAsync",
-    "RenderPass",
-    "RenderPassDepthOnly"
-};
 
-
-static std::string foo() {
-    std::string result = "Available Scenarios:\n";
-    for (size_t i = 0; i < sizeof(scenarios) / sizeof(scenarios[0]); ++i) {
-        result += std::to_string(i) + ". " + std::string(scenarios[i]) + "\n";
-    }
-    result += "Enter scenario number: ";
-    return result;
-}
-
+std::string getPrompt();
 struct ChooseApp : public App {
     AppPtr run(std::string input) override;
 
     explicit ChooseApp(const Context& ctx)
-        : App(ctx, "Choose App", foo(), "0") {
+        : App(ctx, "Choose App", getPrompt(), "0") {
     }
 };
 

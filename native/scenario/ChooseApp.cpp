@@ -8,29 +8,52 @@
 #include "RenderPass.h"
 #include "RenderPassDepthOnly.h"
 
-AppPtr app_factory(int scenario, const Context& context) {
-    if (scenario < 0 || scenario >= std::size(scenarios)) {
-        throw std::runtime_error("Invalid scenario");
+template<typename... Apps>
+struct AppRegistry {
+    static AppPtr create(int index, const Context& ctx) {
+        int i = 0;
+        AppPtr result = nullptr;
+        // Use a fold expression with a comma operator to avoid the ternary operator's copy issue
+        (([&] {
+            if (i++ == index) {
+                result = immediate_app(std::make_unique<Apps>(ctx));
+            }
+        }()), ...);
+
+        return result;
     }
 
-    if (scenarios[scenario] == "MAP_3D_STAGING_MIPMAP") {
-        return immediate_app(std::make_unique<Map3DStagingMipMap>(context));
-    }
-    if (scenarios[scenario] == "MapStagingAsync") {
-        return immediate_app(std::make_unique<MapStagingAsync>(context));
-    }
-    if (scenarios[scenario] == "RenderPass") {
-        return immediate_app(std::make_unique<RenderPass>(context));
-    }
-    if (scenarios[scenario] == "RenderPassDepthOnly") {
-        return immediate_app(std::make_unique<RenderPassDepthOnly>(context));
+
+    static std::string getPrompt() {
+        std::string result = "Available Scenarios:\n";
+        int i = 0;
+        const char* names[] = { typeid(Apps).name()... };
+
+        for (int j = 0; j < sizeof...(Apps); ++j) {
+                result += std::to_string(j) + ". " + names[j] + "\n";
+            }
+            result += "Enter scenario number: ";
+            return result;
+        }
+
+        static size_t count() { return sizeof...(Apps); }
+    };
+
+    using MyScenarios = AppRegistry<
+        Map3DStagingMipMap,
+        MapStagingAsync,
+        RenderPass,
+        RenderPassDepthOnly
+    >;
+
+    std::string getPrompt() {
+        return MyScenarios::getPrompt();
     }
 
-    throw std::runtime_error("Scenario not implemented in factory");
-}
-
-AppPtr ChooseApp::run(std::string input) {
-    int scenarioNum = std::stoi(input); // Subtract 1 because UI list is 1-indexed
-    return app_factory(scenarioNum,
-                       context);
-}
+    AppPtr ChooseApp::run(std::string input) {
+        int scenarioNum = std::stoi(input);
+        if (scenarioNum < 0 || scenarioNum >= MyScenarios::count()) {
+            throw std::runtime_error("Invalid scenario");
+        }
+        return MyScenarios::create(scenarioNum, context);
+    }
