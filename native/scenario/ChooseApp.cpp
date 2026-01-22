@@ -7,8 +7,9 @@
 #include "MapStagingAsync.h"
 #include "RenderPassColorDrawOnly.h"
 #include "RenderPassDepthOnly.h"
+#include "RenderPassClearOnly.h"
 
-template<typename... Apps>
+template <typename... Apps>
 struct AppRegistry {
     static AppPtr create(int index, const Context& ctx) {
         int i = 0;
@@ -27,33 +28,34 @@ struct AppRegistry {
     static std::string getPrompt() {
         std::string result = "Available Scenarios:\n";
         int i = 0;
-        const char* names[] = { typeid(Apps).name()... };
+        const char* names[] = {typeid(Apps).name()...};
 
         for (int j = 0; j < sizeof...(Apps); ++j) {
-                result += std::to_string(j) + ". " + names[j] + "\n";
-            }
-            result += "Enter scenario number: ";
-            return result;
+            result += std::to_string(j) + ". " + names[j] + "\n";
         }
-
-        static size_t count() { return sizeof...(Apps); }
-    };
-
-    using MyScenarios = AppRegistry<
-        Map3DStagingMipMap,
-        MapStagingAsync,
-        RenderPassColorDrawOnly,
-        RenderPassDepthOnly
-    >;
-
-    std::string getPrompt() {
-        return MyScenarios::getPrompt();
+        result += "Enter scenario number: ";
+        return result;
     }
 
-    AppPtr ChooseApp::run(std::string input) {
-        int scenarioNum = std::stoi(input);
-        if (scenarioNum < 0 || scenarioNum >= MyScenarios::count()) {
-            throw std::runtime_error("Invalid scenario");
-        }
-        return MyScenarios::create(scenarioNum, context);
+    static size_t count() { return sizeof...(Apps); }
+};
+
+using MyScenarios = AppRegistry<
+    Map3DStagingMipMap,
+    MapStagingAsync,
+    RenderPassColorDrawOnly,
+    RenderPassDepthOnly,
+    RenderPassClearOnly
+>;
+
+std::string getPrompt() {
+    return MyScenarios::getPrompt();
+}
+
+AppPtr ChooseApp::run(std::string input) {
+    int scenarioNum = std::stoi(input);
+    if (scenarioNum < 0 || scenarioNum >= MyScenarios::count()) {
+        throw std::runtime_error("Invalid scenario");
     }
+    return MyScenarios::create(scenarioNum, context);
+}
