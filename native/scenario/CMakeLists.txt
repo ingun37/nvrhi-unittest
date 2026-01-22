@@ -19,8 +19,8 @@ add_library(scenario STATIC
         scenario.cpp
         MapStagingAsync.cpp
         MapStagingAsync.h
-        RenderPass.cpp
-        RenderPass.h
+        RenderPassColorDrawOnly.cpp
+        RenderPassColorDrawOnly.h
         RenderPassDepthOnly.cpp
         RenderPassDepthOnly.h)
 target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util)

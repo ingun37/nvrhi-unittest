@@ -5,7 +5,7 @@
 #include "ChooseApp.h"
 #include "Map3DStagingMipMap.h"
 #include "MapStagingAsync.h"
-#include "RenderPass.h"
+#include "RenderPassColorDrawOnly.h"
 #include "RenderPassDepthOnly.h"
 
 template<typename... Apps>
@@ -42,7 +42,7 @@ struct AppRegistry {
     using MyScenarios = AppRegistry<
         Map3DStagingMipMap,
         MapStagingAsync,
-        RenderPass,
+        RenderPassColorDrawOnly,
         RenderPassDepthOnly
     >;
 

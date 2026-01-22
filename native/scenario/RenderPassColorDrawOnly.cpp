@@ -2,7 +2,7 @@
 // Created by Ingun Jon on 1/21/26.
 //
 
-#include "RenderPass.h"
+#include "RenderPassColorDrawOnly.h"
 
 #include "Termination.h"
 
@@ -32,7 +32,7 @@ AppPtr RunDrawCommand::run(std::string) {
         std::move(pipeline)));
 }
 
-AppPtr RenderPass::run(std::string) {
+AppPtr RenderPassColorDrawOnly::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };

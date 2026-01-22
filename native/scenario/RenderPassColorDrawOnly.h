@@ -34,11 +34,11 @@ struct RunDrawCommand : public App {
     AppPtr run(std::string) override;
 };
 
-struct RenderPass : public App {
-    RenderPass() = delete;
+struct RenderPassColorDrawOnly : public App {
+    RenderPassColorDrawOnly() = delete;
 
-    explicit RenderPass(const Context& ctx)
-        : App(ctx, "RenderPass", "", "") {
+    explicit RenderPassColorDrawOnly(const Context& ctx)
+        : App(ctx, "RenderPassColorDrawOnly", "", "") {
     }
 
     AppPtr run(std::string) override;
