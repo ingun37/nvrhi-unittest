@@ -10,6 +10,10 @@
       "name": "webgpu",
       "binaryDir": "${sourceDir}/cmake-build-webgpu",
       "cacheVariables": {
+        "NVRHI_BUILD_SHARED": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
         "Dawn_DIR": "/Users/ingun/projects/dawn/install/Release/lib/cmake/Dawn",
         "NVRHI_WITH_VULKAN": {
           "type": "BOOL",
@@ -26,6 +30,10 @@
       "name": "vulkan",
       "binaryDir": "${sourceDir}/cmake-build-vulkan",
       "cacheVariables": {
+        "NVRHI_BUILD_SHARED": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "NVRHI_WITH_VULKAN": {
           "type": "BOOL",
           "value": "ON"

@@ -5,6 +5,16 @@
 #include "RenderPassColorClearDraw.h"
 
 #include "Termination.h"
+#include <iostream>
+
+std::string padToMultipleOfFour(std::string input) {
+    size_t remainder = input.length() % 4;
+    if (remainder != 0) {
+        size_t paddingNeeded = 4 - remainder;
+        input.append(paddingNeeded, ' ');
+    }
+    return input;
+}
 
 AppPtr RunDrawCommand::run(std::string input) {
     std::istringstream iss(input);
@@ -23,13 +33,15 @@ AppPtr RunDrawCommand::run(std::string input) {
     state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
     commandList->setGraphicsState(state);
 
+    const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
     if (shouldClear) {
-        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
+        std::cout << "Clearing..." << std::endl;
         commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
     }
 
+    nvrhi::DrawArguments args{};
     if (shouldDraw) {
-        nvrhi::DrawArguments args;
+        std::cout << "Drawing..." << std::endl;
         args.vertexCount = 3;
         commandList->draw(args);
     }
@@ -50,7 +62,7 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };
-    const std::string vertexCode = R"(
+    const std::string vertexCode = padToMultipleOfFour(R"(
         const g_positions = array<vec2f, 3>(
             vec2f(-0.5, -0.5),
             vec2f(0.0, 0.5),
@@ -59,15 +71,15 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
         @vertex fn vs(@builtin(vertex_index) vertex_id: u32) -> @builtin(position) vec4f {
             return vec4f(g_positions[vertex_id], 0.0, 1.0);
         }
-    )";
+    )");
     nvrhi::ShaderDesc pixelDesc{
         .entryName = "fs"
     };
-    const std::string pixelCode = R"(
+    const std::string pixelCode = padToMultipleOfFour(R"(
         @fragment fn fs(@builtin(position) FragCoord : vec4f) -> @location(0) vec4f {
             return vec4f(1, 0, 0, 1);
         }
-    )";
+    )");
 
     auto vertex = context.nvrhiDevice->createShader(vertexDesc, vertexCode.c_str(), vertexCode.size());
     auto pixel = context.nvrhiDevice->createShader(pixelDesc, pixelCode.c_str(), pixelCode.size());

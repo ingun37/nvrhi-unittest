@@ -7,6 +7,7 @@
 #include <nvrhi/nvrhi.h>
 #include <nvrhi/vulkan.h>
 #include "../scenario/include/scenario/scenario.h"
+#include <dlfcn.h>
 
 struct QueueFamilyIndices {
     uint32_t graphicsFamily;
@@ -35,6 +36,35 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
+static const std::vector<const char*> validationLayers = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
+bool checkValidationLayerSupport() {
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : validationLayers) {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers) {
+            if (strcmp(layerName, layerProperties.layerName) == 0) {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 VkInstance create_instance() {
     // if (volkInitialize() != VK_SUCCESS) throw std::runtime_error("failed to initialize volk!");
     VkApplicationInfo appInfo{};
@@ -44,10 +74,14 @@ VkInstance create_instance() {
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
+    if (!checkValidationLayerSupport()) {
+        throw std::runtime_error("validation layers requested, but not available!");
+    }
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledLayerCount = 0;
+    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    createInfo.ppEnabledLayerNames = validationLayers.data();
 
     std::vector<const char*> requiredExtensions;
 
@@ -73,7 +107,45 @@ class MessageCallback : public nvrhi::IMessageCallback {
     }
 };
 
+class ScopedDylib {
+public:
+    explicit ScopedDylib(const char* path) {
+        m_Handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+        if (!m_Handle) {
+            const char* err = dlerror();
+            throw std::runtime_error(std::string("dlopen failed for: ") + path +
+                                     (err ? (std::string(" (") + err + ")") : ""));
+        }
+    }
+
+    ~ScopedDylib() {
+        if (m_Handle) dlclose(m_Handle);
+    }
+
+    ScopedDylib(const ScopedDylib&) = delete;
+
+    ScopedDylib& operator=(const ScopedDylib&) = delete;
+
+    ScopedDylib(ScopedDylib&& other) noexcept
+        : m_Handle(other.m_Handle) { other.m_Handle = nullptr; }
+
+    ScopedDylib& operator=(ScopedDylib&& other) noexcept {
+        if (this != &other) {
+            if (m_Handle) dlclose(m_Handle);
+            m_Handle = other.m_Handle;
+            other.m_Handle = nullptr;
+        }
+        return *this;
+    }
+
+private:
+    void* m_Handle = nullptr;
+};
+
 int main() {
+    // ScopedDylib validationLayerDylib(
+    //     "/opt/homebrew/opt/vulkan-validationlayers/lib/libVkLayer_khronos_validation.dylib");
+
     VkInstance instance = create_instance();
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
