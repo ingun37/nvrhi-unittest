@@ -29,18 +29,17 @@ AppPtr RunDrawCommand::run(std::string input) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
-    nvrhi::GraphicsState state;
-    state.pipeline = pipeline;
-    state.framebuffer = framebuffer;
-    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
-    commandList->setGraphicsState(state);
-
     const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
     if (shouldClear) {
         std::cout << "Clearing..." << std::endl;
         commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
     }
 
+    nvrhi::GraphicsState state;
+    state.pipeline = pipeline;
+    state.framebuffer = framebuffer;
+    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
+    commandList->setGraphicsState(state);
     nvrhi::DrawArguments args{};
     if (shouldDraw) {
         std::cout << "Drawing..." << std::endl;
