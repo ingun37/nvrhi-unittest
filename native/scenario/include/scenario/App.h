@@ -38,7 +38,7 @@ struct App {
 };
 
 template <class T, class... Args> requires std::is_base_of_v<App, T>
-AppPtr immediate_app(Args&&... args) {
+AppPtr create_app_immediately(Args&&... args) {
     AppPtr promise = std::make_unique<AppPromise>();
     promise->set_value(std::unique_ptr<T>(new T(std::forward<Args>(args)...)));
     return promise;

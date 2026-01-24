@@ -49,7 +49,7 @@ AppPtr RunDrawCommand::run(std::string input) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app<RunDrawCommand>(
+    return create_app_immediately<RunDrawCommand>(
         context,
         std::move(texture),
         std::move(vertex),
@@ -121,7 +121,7 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return immediate_app<RunDrawCommand>(
+    return create_app_immediately<RunDrawCommand>(
         context,
         std::move(colorTexture),
         std::move(vertex),

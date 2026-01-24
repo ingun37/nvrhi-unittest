@@ -76,7 +76,7 @@ AppPtr WriteStagingBuffer::run(std::string _) {
     context.nvrhiDevice->unmapStagingTexture(staging);
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return immediate_app<Command3DCopyMipMap>(context,
+    return create_app_immediately<Command3DCopyMipMap>(context,
                                               std::move(commandList),
                                               std::move(staging),
                                               mipLevel);
@@ -106,7 +106,7 @@ AppPtr Map3DStagingMipMap::run(std::string _) {
     int mipLevelInput = 0;
     std::cout << "WebGPU backend doesn't support mipmapping for staging texture. Defaulting to mip level 0.";
 
-    return immediate_app<WriteStagingBuffer>(context,
+    return create_app_immediately<WriteStagingBuffer>(context,
                                              std::move(staging),
                                              std::move(images),
                                              mipLevelInput);

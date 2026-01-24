@@ -105,7 +105,7 @@ AppPtr CopyTextureToStaging::run(std::string) {
         nvrhi::TextureSlice{}.resolve(texture->getDesc()));
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
-    return immediate_app<ReadStaging>(context, std::move(stagingTexture), std::move(buffer));
+    return create_app_immediately<ReadStaging>(context, std::move(stagingTexture), std::move(buffer));
 }
 
 AppPtr WriteTextureAndCreateStaging::run(std::string _) {
@@ -136,7 +136,7 @@ AppPtr WriteTextureAndCreateStaging::run(std::string _) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app<CopyTextureToStaging>(context,
+    return create_app_immediately<CopyTextureToStaging>(context,
                                                std::move(texture),
                                                std::move(buffer),
                                                context.nvrhiDevice->createStagingTexture(
@@ -148,7 +148,7 @@ AppPtr WriteTextureAndCreateStaging::run(std::string _) {
 AppPtr MapStagingAsync::run(std::string _) {
     nvrhi::TextureDesc desc{.width = 200, .height = 2, .depth = 1, .format = nvrhi::Format::RGBA8_UNORM};
     nvrhi::BufferDesc bd{.byteSize = 200 * 2 * 4, .cpuAccess = nvrhi::CpuAccessMode::Read};
-    return immediate_app<WriteTextureAndCreateStaging>(
+    return create_app_immediately<WriteTextureAndCreateStaging>(
         context,
         context.nvrhiDevice->createTexture(desc),
         context.nvrhiDevice->createBuffer(bd)
