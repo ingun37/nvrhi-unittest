@@ -85,14 +85,12 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
     std::vector<char> fileData(fileSize);
     file.read(fileData.data(), fileSize);
 
-    nvrhi::ShaderDesc vertexDesc{
-        .entryName = "vs"
-    };
-
-    nvrhi::ShaderDesc pixelDesc{
-        .entryName = "fs"
-    };
-
+    nvrhi::ShaderDesc vertexDesc{};
+    vertexDesc.setEntryName("vs");
+    vertexDesc.setShaderType(nvrhi::ShaderType::Vertex);
+    nvrhi::ShaderDesc pixelDesc{};
+    pixelDesc.setEntryName("ps");
+    pixelDesc.setShaderType(nvrhi::ShaderType::Pixel);
     auto vertex = context.nvrhiDevice->createShader(vertexDesc, fileData.data(), fileData.size());
     auto pixel = context.nvrhiDevice->createShader(pixelDesc, fileData.data(), fileData.size());
 
