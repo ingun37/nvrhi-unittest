@@ -16,7 +16,7 @@ struct AppRegistry {
         // Use a fold expression with a comma operator to avoid the ternary operator's copy issue
         (([&] {
             if (i++ == index) {
-                result = immediate_app<Apps>(ctx);
+                result = create_app_immediately<Apps>(ctx);
             }
         }()), ...);
 
