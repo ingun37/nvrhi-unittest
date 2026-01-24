@@ -6,6 +6,8 @@
 
 #include "Termination.h"
 #include <iostream>
+#include <fstream>
+
 
 std::string padToMultipleOfFour(std::string input) {
     size_t remainder = input.length() % 4;
@@ -58,31 +60,41 @@ AppPtr RunDrawCommand::run(std::string input) {
         std::move(pipeline)));
 }
 
+std::string extension() {
+#if defined(SCENARIO_VULKAN)
+    return ".sprv";
+#elif defined(SCENARIO_WGPU)
+    return ".wgsl";
+#else
+    throw std::runtime_error("Unknown platform");
+#endif
+}
+
 AppPtr RenderPassColorClearDraw::run(std::string) {
+    std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
+    std::ifstream file(shader_dir + "/simple" + extension(), std::ios::in | std::ios::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open shader file");
+    }
+    // Determine file size
+    file.seekg(0, std::ios::end);
+    std::streampos fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Read data into vector
+    std::vector<char> fileData(fileSize);
+    file.read(fileData.data(), fileSize);
+
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };
-    const std::string vertexCode = padToMultipleOfFour(R"(
-        const g_positions = array<vec2f, 3>(
-            vec2f(-0.5, -0.5),
-            vec2f(0.0, 0.5),
-            vec2f(0.5, -0.5)
-        );
-        @vertex fn vs(@builtin(vertex_index) vertex_id: u32) -> @builtin(position) vec4f {
-            return vec4f(g_positions[vertex_id], 0.0, 1.0);
-        }
-    )");
+
     nvrhi::ShaderDesc pixelDesc{
         .entryName = "fs"
     };
-    const std::string pixelCode = padToMultipleOfFour(R"(
-        @fragment fn fs(@builtin(position) FragCoord : vec4f) -> @location(0) vec4f {
-            return vec4f(1, 0, 0, 1);
-        }
-    )");
 
-    auto vertex = context.nvrhiDevice->createShader(vertexDesc, vertexCode.c_str(), vertexCode.size());
-    auto pixel = context.nvrhiDevice->createShader(pixelDesc, pixelCode.c_str(), pixelCode.size());
+    auto vertex = context.nvrhiDevice->createShader(vertexDesc, fileData.data(), fileData.size());
+    auto pixel = context.nvrhiDevice->createShader(pixelDesc, fileData.data(), fileData.size());
 
     nvrhi::GraphicsPipelineDesc psoDesc;
     psoDesc.VS = vertex;

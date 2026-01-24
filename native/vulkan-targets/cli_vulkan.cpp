@@ -37,8 +37,13 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 }
 
 static const std::vector<const char*> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
+    "VK_LAYER_KHRONOS_validation",
 };
+
+static const std::vector<const char*> requiredExtensions = {
+    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+};
+
 
 bool checkValidationLayerSupport() {
     uint32_t layerCount;
@@ -73,7 +78,7 @@ VkInstance create_instance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_4;
     if (!checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested, but not available!");
     }
@@ -82,10 +87,6 @@ VkInstance create_instance() {
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
     createInfo.ppEnabledLayerNames = validationLayers.data();
-
-    std::vector<const char*> requiredExtensions;
-
-    requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
@@ -142,6 +143,10 @@ private:
     void* m_Handle = nullptr;
 };
 
+static const std::vector<const char*> deviceExtensions = {
+    "VK_KHR_portability_subset"
+};
+
 int main() {
     // ScopedDylib validationLayerDylib(
     //     "/opt/homebrew/opt/vulkan-validationlayers/lib/libVkLayer_khronos_validation.dylib");
@@ -176,15 +181,26 @@ int main() {
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
+
+    VkPhysicalDeviceVulkan11Features features11{};
+    features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    features11.shaderDrawParameters = VK_TRUE; // This is the magic switch
+
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures{};
+    timelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    timelineFeatures.timelineSemaphore = VK_TRUE;
+    timelineFeatures.pNext = &features11;
+
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext = &timelineFeatures; // <--- The "pNext" chain is the key
 
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.queueCreateInfoCount = 1;
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
-
+    createInfo.enabledExtensionCount = deviceExtensions.size();
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0;
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
