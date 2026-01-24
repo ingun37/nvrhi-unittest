@@ -8,7 +8,6 @@
 #include <ranges>
 #include <algorithm>
 
-#include "Termination.h"
 #include "nvrhi_util.h"
 
 static nvrhi::TextureHandle create3DTexture(const uint32_t width,
@@ -47,13 +46,12 @@ AppPtr Command3DCopyMipMap::run(std::string _) {
     dst1Slice.height = src1Slice.height;
     dst1Slice.depth = 2;
 
-
     commandList->open();
     commandList->copyTexture(dstTexture, dst1Slice, stagingTexture, src1Slice);
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app(std::make_unique<Termination>(context));
+    return nullptr;
 }
 
 AppPtr WriteStagingBuffer::run(std::string _) {
@@ -78,18 +76,18 @@ AppPtr WriteStagingBuffer::run(std::string _) {
     context.nvrhiDevice->unmapStagingTexture(staging);
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return immediate_app(std::make_unique<Command3DCopyMipMap>(context,
-                                                               std::move(commandList),
-                                                               std::move(staging),
-                                                               mipLevel));
+    return immediate_app<Command3DCopyMipMap>(context,
+                                              std::move(commandList),
+                                              std::move(staging),
+                                              mipLevel);
 }
 
 AppPtr Map3DStagingMipMap::run(std::string _) {
     constexpr int depth = 16;
     constexpr int mipLevels = 2;
-    const auto images = std::views::iota(0, mipLevels) | std::views::transform([](auto mip) {
+    auto images = std::views::iota(0, mipLevels) | std::views::transform([](auto mip) {
         return std::views::iota(0, (depth >> mip)) | std::views::transform([mip](auto z) {
-            auto p = std::to_string(mip) + "/" + std::to_string(z*(1<<mip)) + ".png";
+            auto p = std::to_string(mip) + "/" + std::to_string(z * (1 << mip)) + ".png";
             std::cout << "Loading " << p << std::endl;
             return Image::load("/Users/ingun/CLionProjects/nvrhi-unit-test/native/3d-texture/" + p);
         }) | std::ranges::to<std::vector>();
@@ -108,8 +106,8 @@ AppPtr Map3DStagingMipMap::run(std::string _) {
     int mipLevelInput = 0;
     std::cout << "WebGPU backend doesn't support mipmapping for staging texture. Defaulting to mip level 0.";
 
-    return immediate_app(std::make_unique<WriteStagingBuffer>(context,
-                                                              std::move(staging),
-                                                              std::move(images),
-                                                              mipLevelInput));
+    return immediate_app<WriteStagingBuffer>(context,
+                                             std::move(staging),
+                                             std::move(images),
+                                             mipLevelInput);
 }

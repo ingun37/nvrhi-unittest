@@ -5,8 +5,6 @@
 #include "RenderPassDepthOnly.h"
 
 
-#include "Termination.h"
-
 AppPtr RunDepthDrawCommand::run(std::string) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
@@ -24,13 +22,13 @@ AppPtr RunDepthDrawCommand::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app(std::make_unique<RunDepthDrawCommand>(
+    return immediate_app<RunDepthDrawCommand>(
         context,
         std::move(texture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
-        std::move(pipeline)));
+        std::move(pipeline));
 }
 
 AppPtr RenderPassDepthOnly::run(std::string) {
@@ -89,11 +87,11 @@ AppPtr RenderPassDepthOnly::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return immediate_app(std::make_unique<RunDepthDrawCommand>(
+    return immediate_app<RunDepthDrawCommand>(
         context,
         std::move(depthTexture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
-        std::move(pipeline)));
+        std::move(pipeline));
 }

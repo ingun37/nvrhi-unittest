@@ -37,10 +37,10 @@ struct App {
     virtual AppPtr run(std::string input) =0;
 };
 
-template <typename T> requires std::is_base_of_v<App, T>
-AppPtr immediate_app(std::unique_ptr<T> app) {
+template <class T, class... Args> requires std::is_base_of_v<App, T>
+AppPtr immediate_app(Args&&... args) {
     AppPtr promise = std::make_unique<AppPromise>();
-    promise->set_value(std::move(app));
+    promise->set_value(std::unique_ptr<T>(new T(std::forward<Args>(args)...)));
     return promise;
 }
 

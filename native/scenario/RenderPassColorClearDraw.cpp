@@ -4,7 +4,6 @@
 
 #include "RenderPassColorClearDraw.h"
 
-#include "Termination.h"
 #include <iostream>
 #include <fstream>
 
@@ -50,13 +49,13 @@ AppPtr RunDrawCommand::run(std::string input) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_app(std::make_unique<RunDrawCommand>(
+    return immediate_app<RunDrawCommand>(
         context,
         std::move(texture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
-        std::move(pipeline)));
+        std::move(pipeline));
 }
 
 std::string extension() {
@@ -122,11 +121,11 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return immediate_app(std::make_unique<RunDrawCommand>(
+    return immediate_app<RunDrawCommand>(
         context,
         std::move(colorTexture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
-        std::move(pipeline)));
+        std::move(pipeline));
 }

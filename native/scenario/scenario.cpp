@@ -9,7 +9,7 @@
 #include "ChooseApp.h"
 
 void run_app(Context&& ctx) {
-    AppPtr app_p = immediate_app(std::make_unique<ChooseApp>(ctx));
+    AppPtr app_p = immediate_app<ChooseApp>(ctx);
     while (app_p != nullptr) {
         auto app = app_p->get_future().get();
         if (app == nullptr) break;

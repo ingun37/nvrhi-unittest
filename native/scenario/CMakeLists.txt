@@ -6,16 +6,6 @@ add_library(scenario STATIC
         Map3DStagingMipMap.h
         ChooseApp.cpp
         ChooseApp.h
-        ReadRect.cpp
-        ReadRect.h
-        ReadBox.cpp
-        ReadBox.h
-        ReadExtent3D.cpp
-        ReadExtent3D.h
-        ReadOrigin3D.cpp
-        ReadOrigin3D.h
-        Termination.cpp
-        Termination.h
         scenario.cpp
         MapStagingAsync.cpp
         MapStagingAsync.h
