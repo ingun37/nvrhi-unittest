@@ -144,7 +144,8 @@ private:
 };
 
 static const std::vector<const char*> deviceExtensions = {
-    "VK_KHR_portability_subset"
+    "VK_KHR_portability_subset",
+    "VK_KHR_synchronization2"
 };
 
 int main() {
@@ -179,7 +180,6 @@ int main() {
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
     VkPhysicalDeviceFeatures deviceFeatures{};
-
     VkDeviceCreateInfo createInfo{};
 
     VkPhysicalDeviceVulkan11Features features11{};
@@ -189,10 +189,15 @@ int main() {
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures{};
     timelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
     timelineFeatures.timelineSemaphore = VK_TRUE;
-    timelineFeatures.pNext = &features11;
+    features11.pNext = &timelineFeatures;
+
+    VkPhysicalDeviceSynchronization2Features sync2Features{};
+    sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+    sync2Features.synchronization2 = VK_TRUE;
+    timelineFeatures.pNext = &sync2Features;
 
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = &timelineFeatures; // <--- The "pNext" chain is the key
+    createInfo.pNext = &features11; // <--- The "pNext" chain is the key
 
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.queueCreateInfoCount = 1;
