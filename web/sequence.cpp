@@ -92,7 +92,7 @@ struct InitSurface : public App {
         config.presentMode = capabilities.presentModes[0];
         surface.Configure(&config);
         user_data.context = Context{nvrhi::webgpu::createDevice({user_data.device, queue})};
-        return immediate_app(std::make_unique<ChooseApp>(user_data.context));
+        return create_app_immediately<ChooseApp>(user_data.context);
     }
 };
 
@@ -123,7 +123,7 @@ struct InitDevice : public App {
                 std::cout << "Device is created" << std::endl;
                 user_data.device = std::move(dv);
             });
-        return immediate_app(std::make_unique<InitSurface>(user_data));
+        return create_app_immediately<InitSurface>(user_data);
     }
 };
 
@@ -156,13 +156,13 @@ struct InitAdapter : public App {
                 }
                 user_data.adapter = std::move(ad);
             });
-        return immediate_app(std::make_unique<InitDevice>(user_data));
+        return create_app_immediately<InitDevice>(user_data);
     }
 };
 
 void _iter(UserData& user_data) {
     if (user_data.app == nullptr && user_data.current_app == nullptr) {
-        user_data.app = immediate_app(std::make_unique<InitAdapter>(user_data));
+        user_data.app = create_app_immediately<InitAdapter>(user_data);
     }
     if (user_data.app && !user_data.future.valid()) {
         user_data.future = user_data.app->get_future();

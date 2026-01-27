@@ -72,7 +72,7 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
     std::ifstream file(shader_dir + "/simple" + extension(), std::ios::in | std::ios::binary);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open shader file");
+        throw std::runtime_error("Failed to open shader file at " + shader_dir + "/simple" + extension());
     }
     // Determine file size
     file.seekg(0, std::ios::end);

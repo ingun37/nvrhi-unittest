@@ -83,6 +83,7 @@ else ()
 
     add_subdirectory("${CMAKE_SOURCE_DIR}/../native/my_io" "${CMAKE_BINARY_DIR}/my_io")
     add_subdirectory("${CMAKE_SOURCE_DIR}/../native/scenario" "${CMAKE_BINARY_DIR}/scenario")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/../native/shaders" "${CMAKE_BINARY_DIR}/shaders")
     add_subdirectory("${CMAKE_SOURCE_DIR}/../native/Image" "${CMAKE_BINARY_DIR}/Image")
     target_compile_options(Image PUBLIC -pthread)
 
@@ -94,7 +95,7 @@ else ()
             scenario
     )
     target_compile_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind -sNO_DISABLE_EXCEPTION_CATCHING)
-    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind --shell-file "${CMAKE_SOURCE_DIR}/sequence.html" -sNO_DISABLE_EXCEPTION_CATCHING)
+    target_link_options(sequence PUBLIC --use-port=contrib.glfw3 -lembind --shell-file "${CMAKE_SOURCE_DIR}/sequence.html" -sNO_DISABLE_EXCEPTION_CATCHING --preload-file "${SHADERS_OUTPUT_DIR}@${SHADERS_OUTPUT_DIR}")
 
 endif ()
 

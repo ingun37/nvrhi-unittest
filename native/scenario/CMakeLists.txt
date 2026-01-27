@@ -18,6 +18,7 @@ target_include_directories(scenario PUBLIC include PRIVATE .)
 add_dependencies(scenario shaders)
 
 set(SHADERS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/shaders/generated")
+set(SHADERS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/shaders/generated" PARENT_SCOPE)
 add_compile_definitions(SCENARIO_SHADERS_OUTPUT_DIR="${SHADERS_OUTPUT_DIR}")
 if (NVRHI_WITH_VULKAN)
     add_compile_definitions(SCENARIO_VULKAN=true)
