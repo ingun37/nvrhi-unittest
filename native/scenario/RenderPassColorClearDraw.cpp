@@ -19,19 +19,27 @@ std::string padToMultipleOfFour(std::string input) {
 
 AppPtr RunDrawCommand::run(std::string input) {
     std::istringstream iss(input);
-    std::string clearStr, drawStr;
-    iss >> clearStr >> drawStr;
+    std::string clearColorStr, clearDepthStr, drawStr;
+    iss >> clearColorStr >> clearDepthStr >> drawStr;
 
-    bool shouldClear = (clearStr == "true");
-    bool shouldDraw = (drawStr == "true");
+    bool shouldClearColor = clearColorStr == "true";
+    bool shouldClearDepth = clearDepthStr == "true";
+    bool shouldDraw = drawStr == "true";
 
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
-    const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
-    if (shouldClear) {
-        std::cout << "Clearing..." << std::endl;
+    if (shouldClearColor) {
+        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
+        std::cout << "Clearing Color..." << std::endl;
         commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
+    }
+
+    if (shouldClearDepth) {
+        std::cout << "Clearing depth..." << std::endl;
+        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().depthAttachment;
+
+        commandList->clearDepthStencilTexture(att.texture, att.subresources, true, 0.6f, true, 64);
     }
 
     nvrhi::GraphicsState state;
@@ -51,7 +59,8 @@ AppPtr RunDrawCommand::run(std::string input) {
 
     return create_app_immediately<RunDrawCommand>(
         context,
-        std::move(texture),
+        std::move(colorTexture),
+        std::move(depthTexture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
@@ -112,11 +121,22 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
     colorTextureDesc.setFormat(nvrhi::Format::RGBA8_UNORM);
     colorTextureDesc.setIsRenderTarget(true);
     auto colorTexture = context.nvrhiDevice->createTexture(colorTextureDesc);
-
     nvrhi::FramebufferAttachment colorAttachment{};
     colorAttachment.setTexture(colorTexture);
+
+    nvrhi::TextureDesc depthTextureDesc{};
+    depthTextureDesc.setHeight(256);
+    depthTextureDesc.setWidth(256);
+    depthTextureDesc.setFormat(nvrhi::Format::D24S8);
+    depthTextureDesc.setIsRenderTarget(true);
+    auto depthTexture = context.nvrhiDevice->createTexture(depthTextureDesc);
+
+    nvrhi::FramebufferAttachment depthAttachment{};
+    depthAttachment.setTexture(depthTexture);
+
     nvrhi::FramebufferDesc framebufferDesc{};
     framebufferDesc.addColorAttachment(colorAttachment);
+    framebufferDesc.setDepthAttachment(depthAttachment);
     auto framebuffer = context.nvrhiDevice->createFramebuffer(framebufferDesc);
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
@@ -124,6 +144,7 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
     return create_app_immediately<RunDrawCommand>(
         context,
         std::move(colorTexture),
+        std::move(depthTexture),
         std::move(vertex),
         std::move(pixel),
         std::move(framebuffer),
