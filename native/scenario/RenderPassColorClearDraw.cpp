@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <fstream>
-
+#include "backend.h"
 
 std::string padToMultipleOfFour(std::string input) {
     size_t remainder = input.length() % 4;
@@ -67,15 +67,6 @@ AppPtr RunDrawCommand::run(std::string input) {
         std::move(pipeline));
 }
 
-std::string extension() {
-#if defined(SCENARIO_VULKAN)
-    return ".sprv";
-#elif defined(SCENARIO_WGPU)
-    return ".wgsl";
-#else
-    throw std::runtime_error("Unknown platform");
-#endif
-}
 
 AppPtr RenderPassColorClearDraw::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;

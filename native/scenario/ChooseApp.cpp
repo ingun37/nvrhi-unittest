@@ -7,6 +7,7 @@
 #include "MapStagingAsync.h"
 #include "RenderPassColorClearDraw.h"
 #include "RenderPassDepthOnly.h"
+#include "ConstantBuffer.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -43,7 +44,8 @@ using MyScenarios = AppRegistry<
     Map3DStagingMipMap,
     MapStagingAsync,
     RenderPassColorClearDraw,
-    RenderPassDepthOnly
+    RenderPassDepthOnly,
+    ConstantBuffer
 >;
 
 std::string getPrompt() {
