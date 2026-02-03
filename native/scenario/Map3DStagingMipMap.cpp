@@ -51,7 +51,7 @@ AppPtr Command3DCopyMipMap::run(std::string _) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_null_app();
+    return create_null_app();
 }
 
 AppPtr WriteStagingBuffer::run(std::string _) {

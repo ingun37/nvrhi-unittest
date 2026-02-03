@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include "backend.h"
-constexpr const char dummy32[32] = {};
+constexpr float dummy32[8] = {0.0, 0.5, 0.9, 1.0};
 
 AppPtr ConstantBufferDraw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
@@ -46,7 +46,7 @@ AppPtr ConstantBufferDraw::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return immediate_null_app();
+    return create_app_immediately(std::move(*this));
 }
 
 AppPtr ConstantBuffer::run(std::string) {

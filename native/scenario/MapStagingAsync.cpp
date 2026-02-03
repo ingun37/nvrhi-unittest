@@ -17,7 +17,7 @@ AppPtr VerifyStaging::run(std::string) {
             assert(staging_content[i * w + j] == base + j);
         }
     }
-    return immediate_null_app();
+    return create_null_app();
 }
 
 AppPtr ReadStaging::run(std::string _) {

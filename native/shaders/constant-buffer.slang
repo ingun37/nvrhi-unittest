@@ -38,5 +38,5 @@ VertexOutput vs(
 [shader("fragment")]
 float4 ps(VertexOutput input): SV_Target0
 {
-	return float4(1.0, 0.5, 0.2, 1.0);
+	return float4(g_material.data.baseColor, 1.0);
 }
