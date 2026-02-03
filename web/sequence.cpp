@@ -18,8 +18,7 @@ static std::unique_ptr<std::string> g_input;
 enum Stage { Wait, Next };
 
 struct UserData {
-    AppPtr app = nullptr;
-    std::future<AppP> future{};
+    AppFuture future{};
     AppP current_app = nullptr;
     GLFWwindow* window;
     int width;
@@ -161,13 +160,10 @@ struct InitAdapter : public App {
 };
 
 void _iter(UserData& user_data) {
-    if (user_data.app == nullptr && user_data.current_app == nullptr) {
-        user_data.app = create_app_immediately<InitAdapter>(user_data);
+    if (user_data.current_app == nullptr && !user_data.future.valid()) {
+        user_data.future = create_app_immediately<InitAdapter>(user_data);
     }
-    if (user_data.app && !user_data.future.valid()) {
-        user_data.future = user_data.app->get_future();
-    }
-    if (user_data.app && user_data.future.valid()) {
+    if (user_data.future.valid()) {
         auto state = user_data.future.wait_for(std::chrono::seconds(0));
         if (state != std::future_status::ready) {
             std::cout << "waiting ..." << std::endl;
@@ -178,12 +174,12 @@ void _iter(UserData& user_data) {
         std::cout << app->prompt << std::endl;
         std::cout << "Default value: " << app->defaultInput << std::endl;
         user_data.current_app = std::move(app);
-        user_data.app = nullptr;
         return;
     }
 
     if (g_input && user_data.current_app) {
-        user_data.app = user_data.current_app->run(g_input->empty() ? user_data.current_app->defaultInput : *g_input);
+        user_data.future = user_data.current_app->
+            run(g_input->empty() ? user_data.current_app->defaultInput : *g_input);
         g_input = nullptr;
     }
 }

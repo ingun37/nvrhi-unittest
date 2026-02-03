@@ -8,23 +8,17 @@
 
 struct VerifyStaging : public App {
     std::vector<uint32_t> staging_content = {};
-    std::vector<uint32_t> buffer_content = {};
     nvrhi::StagingTextureHandle stagingTexture;
-    nvrhi::BufferHandle buffer;
 
     VerifyStaging() = delete;
 
     explicit VerifyStaging(
         const Context& ctx,
         nvrhi::StagingTextureHandle stagingTexture,
-        nvrhi::BufferHandle buffer,
-        std::vector<uint32_t> staging_content,
-        std::vector<uint32_t> buffer_content)
+        std::vector<uint32_t> staging_content)
         : App(ctx, "Verify Staging", "", ""),
           stagingTexture(std::move(stagingTexture)),
-          buffer(std::move(buffer)),
-          staging_content(std::move(staging_content)),
-          buffer_content(std::move(buffer_content)) {
+          staging_content(std::move(staging_content)) {
     }
 
     AppPtr run(std::string) override;
@@ -32,17 +26,14 @@ struct VerifyStaging : public App {
 
 struct ReadStaging : public App {
     nvrhi::StagingTextureHandle stagingTexture;
-    nvrhi::BufferHandle buffer;
 
     ReadStaging() = delete;
 
     explicit ReadStaging(
         const Context& ctx,
-        nvrhi::StagingTextureHandle&& stagingTexture,
-        nvrhi::BufferHandle&& buffer)
+        nvrhi::StagingTextureHandle&& stagingTexture)
         : App(ctx, "Read Staging", "", ""),
-          stagingTexture(std::move(stagingTexture)),
-          buffer(buffer) {
+          stagingTexture(std::move(stagingTexture)) {
     }
 
     AppPtr run(std::string) override;
@@ -50,18 +41,15 @@ struct ReadStaging : public App {
 
 struct CopyTextureToStaging : public App {
     nvrhi::TextureHandle texture;
-    nvrhi::BufferHandle buffer;
     nvrhi::StagingTextureHandle stagingTexture;
 
     CopyTextureToStaging() = delete;
 
     CopyTextureToStaging(const Context& ctx,
                          nvrhi::TextureHandle&& texture,
-                         nvrhi::BufferHandle&& buffer,
                          nvrhi::StagingTextureHandle&& stagingTexture)
         : App(ctx, "Copy Texture To Staging", "", ""),
           texture(std::move(texture)),
-          buffer(std::move(buffer)),
           stagingTexture(std::move(stagingTexture)) {
     }
 
@@ -70,17 +58,14 @@ struct CopyTextureToStaging : public App {
 
 struct WriteTextureAndCreateStaging : public App {
     nvrhi::TextureHandle texture;
-    nvrhi::BufferHandle buffer;
 
     WriteTextureAndCreateStaging() = delete;
 
     explicit WriteTextureAndCreateStaging(const Context& ctx,
-                                          nvrhi::TextureHandle&& texture,
-                                          nvrhi::BufferHandle&& buffer
+                                          nvrhi::TextureHandle&& texture
         )
         : App(ctx, "WriteTextureAndCreateStaging", "", ""),
-          texture(std::move(texture)),
-          buffer(std::move(buffer)) {
+          texture(std::move(texture)) {
     }
 
     AppPtr run(std::string) override;

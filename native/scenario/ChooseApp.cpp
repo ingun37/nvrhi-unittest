@@ -7,12 +7,13 @@
 #include "MapStagingAsync.h"
 #include "RenderPassColorClearDraw.h"
 #include "RenderPassDepthOnly.h"
+#include "ConstantBuffer.h"
 
 template <typename... Apps>
 struct AppRegistry {
     static AppPtr create(int index, const Context& ctx) {
         int i = 0;
-        AppPtr result = nullptr;
+        AppPtr result;
         // Use a fold expression with a comma operator to avoid the ternary operator's copy issue
         (([&] {
             if (i++ == index) {
@@ -43,7 +44,8 @@ using MyScenarios = AppRegistry<
     Map3DStagingMipMap,
     MapStagingAsync,
     RenderPassColorClearDraw,
-    RenderPassDepthOnly
+    RenderPassDepthOnly,
+    ConstantBuffer
 >;
 
 std::string getPrompt() {
