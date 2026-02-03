@@ -15,7 +15,6 @@ AppPtr VerifyStaging::run(std::string) {
         uint32_t base = 1000 * i;
         for (int j = 0; j < w; j++) {
             assert(staging_content[i * w + j] == base + j);
-            assert(buffer_content[i * w + j] == base + j);
         }
     }
     return nullptr;
@@ -27,7 +26,6 @@ AppPtr ReadStaging::run(std::string _) {
     auto rowPitch = std::make_shared<size_t>(0);
 
     auto staging_content = std::make_shared<std::vector<uint32_t> >();
-    auto buffer_content = std::make_shared<std::vector<uint32_t> >();
     AppPtr next_app = std::make_unique<AppPromise>();
     // auto next_app = std::make_unique<VerifyStaging>(context, stagingTexture, buffer);
 
@@ -39,7 +37,6 @@ AppPtr ReadStaging::run(std::string _) {
         [
             this,
             rowPitch,
-            buffer_content,
             staging_content,
             t = stagingTexture.Get(),
             napp = next_app.get()
@@ -53,45 +50,14 @@ AppPtr ReadStaging::run(std::string _) {
                                         row_ptr,
                                         row_ptr + t->getDesc().width);
             }
-            if (!buffer_content->empty()) {
-                napp->set_value(
-                    std::make_unique<VerifyStaging>(
-                        context,
-                        stagingTexture,
-                        buffer,
-                        std::move(*staging_content),
-                        std::move(*buffer_content)));
-                std::cout << "VerifyStaging is created from stagingTexture callback" << std::endl;
-            } else {
-            }
+            napp->set_value(
+                std::make_unique<VerifyStaging>(
+                    context,
+                    stagingTexture,
+                    std::move(*staging_content)));
+            std::cout << "VerifyStaging is created from stagingTexture callback" << std::endl;
         });
-    context.nvrhiDevice->mapBufferAsync(
-        buffer,
-        nvrhi::CpuAccessMode::Read,
-        [
-            this,
-            buffer_content,
-            staging_content,
-            t = buffer.Get(),
-            napp = next_app.get()
-        ](const void* ptr) {
-            const uint32_t* typed_ptr = static_cast<const uint32_t*>(ptr);
-            std::cout << "callback is called" << std::endl;
-            buffer_content->insert(buffer_content->end(),
-                                   typed_ptr,
-                                   typed_ptr + t->getDesc().byteSize);
-            if (!staging_content->empty()) {
-                napp->set_value(
-                    std::make_unique<VerifyStaging>(
-                        context,
-                        stagingTexture,
-                        buffer,
-                        std::move(*staging_content),
-                        std::move(*buffer_content)));
 
-                std::cout << "VerifyStaging is created from buffer callback" << std::endl;
-            }
-        });
     return next_app;
 }
 
@@ -105,7 +71,7 @@ AppPtr CopyTextureToStaging::run(std::string) {
         nvrhi::TextureSlice{}.resolve(texture->getDesc()));
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
-    return create_app_immediately<ReadStaging>(context, std::move(stagingTexture), std::move(buffer));
+    return create_app_immediately<ReadStaging>(context, std::move(stagingTexture));
 }
 
 AppPtr WriteTextureAndCreateStaging::run(std::string _) {
@@ -132,25 +98,21 @@ AppPtr WriteTextureAndCreateStaging::run(std::string _) {
         row_pitch,
         slice_pitch
         );
-    commandList->writeBuffer(buffer, data.data(), data.size() * sizeof(uint32_t));
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
     return create_app_immediately<CopyTextureToStaging>(context,
-                                               std::move(texture),
-                                               std::move(buffer),
-                                               context.nvrhiDevice->createStagingTexture(
-                                                   texture->getDesc(),
-                                                   nvrhi::CpuAccessMode::Read)
+                                                        std::move(texture),
+                                                        context.nvrhiDevice->createStagingTexture(
+                                                            texture->getDesc(),
+                                                            nvrhi::CpuAccessMode::Read)
         );
 }
 
 AppPtr MapStagingAsync::run(std::string _) {
     nvrhi::TextureDesc desc{.width = 200, .height = 2, .depth = 1, .format = nvrhi::Format::RGBA8_UNORM};
-    nvrhi::BufferDesc bd{.byteSize = 200 * 2 * 4, .cpuAccess = nvrhi::CpuAccessMode::Read};
     return create_app_immediately<WriteTextureAndCreateStaging>(
         context,
-        context.nvrhiDevice->createTexture(desc),
-        context.nvrhiDevice->createBuffer(bd)
+        context.nvrhiDevice->createTexture(desc)
         );
 }
