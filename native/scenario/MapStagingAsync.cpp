@@ -17,7 +17,7 @@ AppPtr VerifyStaging::run(std::string) {
             assert(staging_content[i * w + j] == base + j);
         }
     }
-    return nullptr;
+    return immediate_null_app();
 }
 
 AppPtr ReadStaging::run(std::string _) {
@@ -26,7 +26,9 @@ AppPtr ReadStaging::run(std::string _) {
     auto rowPitch = std::make_shared<size_t>(0);
 
     auto staging_content = std::make_shared<std::vector<uint32_t> >();
-    AppPtr next_app = std::make_unique<AppPromise>();
+    AppPromise next_app;
+    auto f = next_app.get_future();
+    auto next_app_ptr = std::make_shared<AppPromise>(std::move(next_app));
     // auto next_app = std::make_unique<VerifyStaging>(context, stagingTexture, buffer);
 
     context.nvrhiDevice->mapStagingTextureAsync(
@@ -39,8 +41,8 @@ AppPtr ReadStaging::run(std::string _) {
             rowPitch,
             staging_content,
             t = stagingTexture.Get(),
-            napp = next_app.get()
-        ](const void* ptr) {
+            next_app_ptr
+        ](const void* ptr) mutable {
             const uint32_t* typed_ptr = static_cast<const uint32_t*>(ptr);
             std::cout << "callback is called" << std::endl;
             size_t typed_row_pitch = (*rowPitch) / sizeof(uint32_t);
@@ -50,15 +52,14 @@ AppPtr ReadStaging::run(std::string _) {
                                         row_ptr,
                                         row_ptr + t->getDesc().width);
             }
-            napp->set_value(
-                std::make_unique<VerifyStaging>(
-                    context,
-                    stagingTexture,
-                    std::move(*staging_content)));
+            next_app_ptr->set_value(std::make_unique<VerifyStaging>(
+                context,
+                stagingTexture,
+                std::move(*staging_content)));
             std::cout << "VerifyStaging is created from stagingTexture callback" << std::endl;
         });
 
-    return next_app;
+    return f;
 }
 
 AppPtr CopyTextureToStaging::run(std::string) {

@@ -46,7 +46,7 @@ AppPtr ConstantBufferDraw::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return nullptr;
+    return immediate_null_app();
 }
 
 AppPtr ConstantBuffer::run(std::string) {

@@ -12,9 +12,8 @@
 struct App;
 using AppP = std::unique_ptr<App>;
 using AppPromise = std::promise<AppP>;
-using AppPtr = std::unique_ptr<AppPromise>;
-template <typename AppT> requires std::is_base_of_v<App, AppT>
-using AppPtrT = std::unique_ptr<std::promise<std::unique_ptr<AppT> > >;
+using AppFuture = std::future<AppP>;
+using AppPtr = AppFuture;
 
 struct App {
     virtual ~App() = default;
@@ -39,14 +38,14 @@ struct App {
 
 template <class T, class... Args> requires std::is_base_of_v<App, T>
 AppPtr create_app_immediately(Args&&... args) {
-    AppPtr promise = std::make_unique<AppPromise>();
-    promise->set_value(std::unique_ptr<T>(new T(std::forward<Args>(args)...)));
-    return promise;
+    AppPromise promise;
+    promise.set_value(std::unique_ptr<T>(new T(std::forward<Args>(args)...)));
+    return promise.get_future();
 }
 
 inline AppPtr immediate_null_app() {
-    AppPtr promise = std::make_unique<AppPromise>();
-    promise->set_value(nullptr);
-    return promise;
+    AppPromise promise;
+    promise.set_value(nullptr);
+    return promise.get_future();
 }
 #endif //NVRHI_UNIT_TEST_APP_H
