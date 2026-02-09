@@ -8,7 +8,7 @@
 #include "backend.h"
 #include <ranges>
 
-static constexpr int texture_number = 17;
+static constexpr int texture_number = 16;
 
 AppPtr TextureOver16Draw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
