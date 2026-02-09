@@ -1,14 +1,16 @@
 //
-// Created by Ingun Jon on 2/3/26.
+// Created by Ingun Jon on 2/9/26.
 //
 
-#include "ConstantBuffer.h"
+#include "TextureOver16.h"
 #include <iostream>
 #include <fstream>
 #include "backend.h"
-constexpr float dummy32[8] = {0.0, 0.5, 0.9, 1.0};
+#include <ranges>
 
-AppPtr ConstantBufferDraw::run(std::string) {
+static constexpr int texture_number = 16;
+
+AppPtr TextureOver16Draw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = vertex;
     gpd.PS = pixel;
@@ -21,18 +23,28 @@ AppPtr ConstantBufferDraw::run(std::string) {
     gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
     gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
     gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
-    nvrhi::BindingLayoutItem bli{};
-    bli.setSlot(0);
-    bli.setType(nvrhi::ResourceType::ConstantBuffer);
+
+    int cnt = 0;
+    auto bliArr = textures | std::views::transform([&cnt](auto texture) {
+        return nvrhi::BindingLayoutItem::Texture_SRV(cnt++);
+    });
     nvrhi::BindingLayoutDesc bld{};
     bld.setVisibility(nvrhi::ShaderType::AllGraphics);
-    bld.addItem(bli);
+    for (const auto& bli : bliArr) {
+        bld.addItem(bli);
+    }
     auto bl = context.nvrhiDevice->createBindingLayout(bld);
     gpd.addBindingLayout(bl);
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, framebuffer);
-    auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, constantBuffer);
+    cnt = 0;
+    auto bsiArr = textures | std::views::transform([&cnt](auto texture) {
+        return nvrhi::BindingSetItem::Texture_SRV(cnt++, texture);
+    });
+
     nvrhi::BindingSetDesc bsd{};
-    bsd.addItem(bsi);
+    for (const auto& bsi : bsiArr) {
+        bsd.addItem(bsi);
+    }
     auto bs = context.nvrhiDevice->createBindingSet(bsd, bl);
     nvrhi::GraphicsState state;
     state.setPipeline(pipeline);
@@ -47,22 +59,12 @@ AppPtr ConstantBufferDraw::run(std::string) {
 
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<ConstantBufferDraw>(
-        context,
-        std::move(colorTexture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        context.nvrhiDevice->createBuffer({
-            .byteSize = sizeof(dummy32),
-            .isConstantBuffer = true,
-        }),
-        std::move(commandList));
+    return create_app_immediately(std::move(*this));
 }
 
-AppPtr ConstantBuffer::run(std::string) {
+AppPtr TextureOver16::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
-    std::string path = shader_dir + "/constant-buffer" + extension();
+    std::string path = shader_dir + "/texture" + extension();
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open shader file at " + path);
@@ -98,23 +100,21 @@ AppPtr ConstantBuffer::run(std::string) {
     framebufferDesc.addColorAttachment(colorAttachment);
     auto framebuffer = context.nvrhiDevice->createFramebuffer(framebufferDesc);
 
-    nvrhi::BufferDesc bd{};
-    bd.setIsConstantBuffer(true);
-    bd.setByteSize(sizeof(dummy32));
-
-    auto constantBuffer = context.nvrhiDevice->createBuffer(bd);
-
+    auto textures = std::views::iota(0, texture_number) | std::views::transform([this](auto idx) {
+        nvrhi::TextureDesc desc{};
+        desc.setWidth(8);
+        desc.setHeight(8);
+        desc.setFormat(nvrhi::Format::RGBA8_UNORM);
+        return context.nvrhiDevice->createTexture(desc);
+    }) | std::ranges::to<std::vector>();
     auto commandList = context.nvrhiDevice->createCommandList();
-    commandList->open();
-    commandList->writeBuffer(constantBuffer, dummy32, sizeof(dummy32));
-    commandList->close();
-    context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<ConstantBufferDraw>(context,
-                                                      std::move(colorTexture),
-                                                      std::move(vertex),
-                                                      std::move(pixel),
-                                                      std::move(framebuffer),
-                                                      std::move(constantBuffer),
-                                                      std::move(commandList));
+    return create_app_immediately<TextureOver16Draw>(context,
+                                                     std::move(colorTexture),
+                                                     std::move(vertex),
+                                                     std::move(pixel),
+                                                     std::move(framebuffer),
+                                                     std::move(commandList),
+                                                     std::move(textures)
+        );
 }

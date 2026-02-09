@@ -17,6 +17,7 @@
       <file path="$USER_HOME$/projects/NVRHI/rtxmu" />
       <file path="$USER_HOME$/projects/NVRHI/thirdparty/DirectX-Headers" />
       <file path="$USER_HOME$/projects/NVRHI/thirdparty/Vulkan-Headers" />
+      <file path="$USER_HOME$/projects/NVRHI/thirdparty/dawn" />
     </excludeRoots>
   </component>
 </project>
