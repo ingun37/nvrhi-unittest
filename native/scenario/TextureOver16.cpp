@@ -8,6 +8,8 @@
 #include "backend.h"
 #include <ranges>
 
+static constexpr int texture_number = 17;
+
 AppPtr TextureOver16Draw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = vertex;
@@ -98,7 +100,7 @@ AppPtr TextureOver16::run(std::string) {
     framebufferDesc.addColorAttachment(colorAttachment);
     auto framebuffer = context.nvrhiDevice->createFramebuffer(framebufferDesc);
 
-    auto textures = std::views::iota(0, 16) | std::views::transform([this](auto idx) {
+    auto textures = std::views::iota(0, texture_number) | std::views::transform([this](auto idx) {
         nvrhi::TextureDesc desc{};
         desc.setWidth(8);
         desc.setHeight(8);

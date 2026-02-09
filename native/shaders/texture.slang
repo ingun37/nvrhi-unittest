@@ -1,21 +1,22 @@
 struct MaterialData
 {
-    Texture2D texture0;
-    Texture2D texture1;
-    Texture2D texture2;
-    Texture2D texture3;
-    Texture2D texture4;
-    Texture2D texture5;
-    Texture2D texture6;
-    Texture2D texture7;
-    Texture2D texture8;
-    Texture2D texture9;
-    Texture2D textureA;
-    Texture2D textureB;
-    Texture2D textureC;
-    Texture2D textureD;
-    Texture2D textureE;
-    Texture2D textureF;
+    Texture2D texture00;
+    Texture2D texture01;
+    Texture2D texture02;
+    Texture2D texture03;
+    Texture2D texture04;
+    Texture2D texture05;
+    Texture2D texture06;
+    Texture2D texture07;
+    Texture2D texture08;
+    Texture2D texture09;
+    Texture2D texture0A;
+    Texture2D texture0B;
+    Texture2D texture0C;
+    Texture2D texture0D;
+    Texture2D texture0E;
+    Texture2D texture0F;
+    Texture2D texture10;
 };
 
 struct MaterialParamsStruct
