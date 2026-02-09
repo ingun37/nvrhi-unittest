@@ -16,6 +16,8 @@ add_library(scenario STATIC
         RenderPassDepthOnly.h
         ConstantBuffer.cpp
         ConstantBuffer.h
+        TextureOver16.cpp
+        TextureOver16.h
 )
 target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util)
 target_include_directories(scenario PUBLIC include PRIVATE .)
