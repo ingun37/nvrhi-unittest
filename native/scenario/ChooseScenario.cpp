@@ -2,13 +2,13 @@
 // Created by Ingun Jon on 1/14/26.
 //
 #include <memory>
-#include "ChooseScenario.h"
-#include "Map3DStagingMipMap.h"
-#include "MapStagingAsync.h"
-#include "RenderPassColorClearDraw.h"
-#include "RenderPassDepthOnly.h"
-#include "ConstantBuffer.h"
-#include "TextureOver16.h"
+#include "include/scenario/ChooseScenario.h"
+#include "../Map3DStagingMipMap.h"
+#include "../MapStagingAsync.h"
+#include "../RenderPassColorClearDraw.h"
+#include "../RenderPassDepthOnly.h"
+#include "../ConstantBuffer.h"
+#include "../TextureOver16.h"
 
 template <typename... Apps>
 struct AppRegistry {

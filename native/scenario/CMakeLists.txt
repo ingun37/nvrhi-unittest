@@ -2,11 +2,11 @@ add_library(scenario STATIC
         include/scenario/scenario.h
         include/scenario/Step.h
         include/scenario/Context.h
+        include/scenario/ChooseScenario.h
+        ChooseScenario.cpp
         backend.h
         Map3DStagingMipMap.cpp
         Map3DStagingMipMap.h
-        ChooseScenario.cpp
-        ChooseScenario.h
         scenario.cpp
         MapStagingAsync.cpp
         MapStagingAsync.h

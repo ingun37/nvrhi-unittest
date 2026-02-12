@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "ChooseScenario.h"
+#include "include/scenario/ChooseScenario.h"
 
 void run_app(Context&& ctx) {
 #if defined(EMSCRIPTEN)

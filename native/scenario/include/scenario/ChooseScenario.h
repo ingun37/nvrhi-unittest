@@ -4,7 +4,7 @@
 
 #ifndef NVRHI_UNIT_TEST_CHOOSEAPP_H
 #define NVRHI_UNIT_TEST_CHOOSEAPP_H
-#include "include/scenario/Step.h"
+#include "scenario/Step.h"
 
 
 std::string getPrompt();
