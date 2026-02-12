@@ -119,6 +119,7 @@
     function handleInputSubmit() {
         var inputText = document.getElementById('std_input').value;
         Module.run_next_app(inputText);
+        document.getElementById('std_input').value = '';
     }
 </script>
 <script type='text/javascript'>
