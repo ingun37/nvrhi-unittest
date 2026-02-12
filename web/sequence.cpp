@@ -6,9 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu_cpp.h>
 #include <emscripten/bind.h>
-#include <scenario/scenario.h>
-
-#include "../native/scenario/ChooseScenario.h"
+#include <scenario/ChooseScenario.h>
 
 
 using namespace emscripten;
