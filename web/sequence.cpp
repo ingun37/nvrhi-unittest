@@ -8,7 +8,7 @@
 #include <emscripten/bind.h>
 #include <scenario/scenario.h>
 
-#include "../native/scenario/ChooseApp.h"
+#include "../native/scenario/ChooseScenario.h"
 
 
 using namespace emscripten;
@@ -19,8 +19,8 @@ enum Stage { Wait, Next };
 
 struct UserData {
     bool started = false;
-    AppFuture future{};
-    AppP current_app = nullptr;
+    StepFuture future{};
+    StepPtr current_app = nullptr;
     GLFWwindow* window;
     int width;
     int height;
@@ -51,20 +51,20 @@ EMSCRIPTEN_BINDINGS(my_module) {
     function("run_next_app", &run_next_app);
 }
 
-struct InitSurface : public App {
+struct InitSurface : public Step {
     UserData& user_data;
 
     InitSurface() = delete;
 
     InitSurface(UserData& user_data)
-        : App(Context(nullptr),
-              "Init Surface",
-              "",
-              ""),
+        : Step(Context(nullptr),
+               "Init Surface",
+               "",
+               ""),
           user_data(user_data) {
     }
 
-    AppPtr run(std::string _) override {
+    StepFuture run(std::string _) override {
         auto queue = user_data.device.GetQueue();
         std::cout << "Creating surface" << std::endl;
 
@@ -92,21 +92,21 @@ struct InitSurface : public App {
         config.presentMode = capabilities.presentModes[0];
         surface.Configure(&config);
         user_data.context = Context{nvrhi::webgpu::createDevice({user_data.device, queue})};
-        return create_app_immediately<ChooseApp>(user_data.context);
+        return create_step_immediately<ChooseScenario>(user_data.context);
     }
 };
 
-struct InitDevice : public App {
+struct InitDevice : public Step {
     UserData& user_data;
 
     InitDevice() = delete;
 
     InitDevice(UserData& user_data)
-        : App(Context(nullptr), "Init Device", "", ""),
+        : Step(Context(nullptr), "Init Device", "", ""),
           user_data(user_data) {
     }
 
-    AppPtr run(std::string _) override {
+    StepFuture run(std::string _) override {
         wgpu::DeviceDescriptor deviceDesc = {};
         deviceDesc.nextInChain = nullptr;
         std::cout << "Requesting device" << std::endl;
@@ -123,21 +123,21 @@ struct InitDevice : public App {
                 std::cout << "Device is created" << std::endl;
                 user_data.device = std::move(dv);
             });
-        return create_app_immediately<InitSurface>(user_data);
+        return create_step_immediately<InitSurface>(user_data);
     }
 };
 
-struct InitAdapter : public App {
+struct InitAdapter : public Step {
     UserData& user_data;
 
     InitAdapter() = delete;
 
     InitAdapter(UserData& user_data)
-        : App(Context(nullptr), "Init Adapter", "", ""),
+        : Step(Context(nullptr), "Init Adapter", "", ""),
           user_data(user_data) {
     }
 
-    AppPtr run(std::string _) override {
+    StepFuture run(std::string _) override {
         std::cout << "Requesting adapter" << std::endl;
         wgpu::RequestAdapterOptions adapterOptions = {};
 
@@ -156,13 +156,13 @@ struct InitAdapter : public App {
                 }
                 user_data.adapter = std::move(ad);
             });
-        return create_app_immediately<InitDevice>(user_data);
+        return create_step_immediately<InitDevice>(user_data);
     }
 };
 
 void _iter(UserData& user_data) {
     if (!user_data.started) {
-        user_data.future = create_app_immediately<InitAdapter>(user_data);
+        user_data.future = create_step_immediately<InitAdapter>(user_data);
         user_data.started = true;
     }
     if (user_data.future.valid()) {
