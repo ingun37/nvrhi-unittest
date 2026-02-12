@@ -5,7 +5,7 @@
 #include "RenderPassDepthOnly.h"
 
 
-AppPtr RunDepthDrawCommand::run(std::string) {
+StepFuture RunDepthDrawCommand::run(std::string) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
 
@@ -22,10 +22,10 @@ AppPtr RunDepthDrawCommand::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_null_app();
+    return create_null_step();
 }
 
-AppPtr RenderPassDepthOnly::run(std::string) {
+StepFuture RenderPassDepthOnly::run(std::string) {
     nvrhi::ShaderDesc vertexDesc{
         .entryName = "vs"
     };
@@ -81,7 +81,7 @@ AppPtr RenderPassDepthOnly::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return create_app_immediately<RunDepthDrawCommand>(
+    return create_step_immediately<RunDepthDrawCommand>(
         context,
         std::move(depthTexture),
         std::move(vertex),

@@ -8,7 +8,7 @@
 #include "backend.h"
 constexpr float dummy32[8] = {0.0, 0.5, 0.9, 1.0};
 
-AppPtr ConstantBufferDraw::run(std::string) {
+StepFuture ConstantBufferDraw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = vertex;
     gpd.PS = pixel;
@@ -47,10 +47,10 @@ AppPtr ConstantBufferDraw::run(std::string) {
 
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_null_app();
+    return create_null_step();
 }
 
-AppPtr ConstantBuffer::run(std::string) {
+StepFuture ConstantBuffer::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
     std::string path = shader_dir + "/constant-buffer" + extension();
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -100,11 +100,11 @@ AppPtr ConstantBuffer::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<ConstantBufferDraw>(context,
-                                                      std::move(colorTexture),
-                                                      std::move(vertex),
-                                                      std::move(pixel),
-                                                      std::move(framebuffer),
-                                                      std::move(constantBuffer),
-                                                      std::move(commandList));
+    return create_step_immediately<ConstantBufferDraw>(context,
+                                                       std::move(colorTexture),
+                                                       std::move(vertex),
+                                                       std::move(pixel),
+                                                       std::move(framebuffer),
+                                                       std::move(constantBuffer),
+                                                       std::move(commandList));
 }

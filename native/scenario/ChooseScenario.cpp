@@ -2,7 +2,7 @@
 // Created by Ingun Jon on 1/14/26.
 //
 #include <memory>
-#include "ChooseApp.h"
+#include "ChooseScenario.h"
 #include "Map3DStagingMipMap.h"
 #include "MapStagingAsync.h"
 #include "RenderPassColorClearDraw.h"
@@ -12,13 +12,13 @@
 
 template <typename... Apps>
 struct AppRegistry {
-    static AppPtr create(int index, const Context& ctx) {
+    static StepFuture create(int index, const Context& ctx) {
         int i = 0;
-        AppPtr result;
+        StepFuture result;
         // Use a fold expression with a comma operator to avoid the ternary operator's copy issue
         (([&] {
             if (i++ == index) {
-                result = create_app_immediately<Apps>(ctx);
+                result = create_step_immediately<Apps>(ctx);
             }
         }()), ...);
 
@@ -54,7 +54,7 @@ std::string getPrompt() {
     return MyScenarios::getPrompt();
 }
 
-AppPtr ChooseApp::run(std::string input) {
+StepFuture ChooseScenario::run(std::string input) {
     int scenarioNum = std::stoi(input);
     if (scenarioNum < 0 || scenarioNum >= MyScenarios::count()) {
         throw std::runtime_error("Invalid scenario");

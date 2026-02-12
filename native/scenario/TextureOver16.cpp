@@ -10,7 +10,7 @@
 
 static constexpr int texture_number = 16;
 
-AppPtr TextureOver16Draw::run(std::string) {
+StepFuture TextureOver16Draw::run(std::string) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = vertex;
     gpd.PS = pixel;
@@ -59,10 +59,10 @@ AppPtr TextureOver16Draw::run(std::string) {
 
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_null_app();
+    return create_null_step();
 }
 
-AppPtr TextureOver16::run(std::string) {
+StepFuture TextureOver16::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
     std::string path = shader_dir + "/texture" + extension();
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -109,12 +109,12 @@ AppPtr TextureOver16::run(std::string) {
     }) | std::ranges::to<std::vector>();
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return create_app_immediately<TextureOver16Draw>(context,
-                                                     std::move(colorTexture),
-                                                     std::move(vertex),
-                                                     std::move(pixel),
-                                                     std::move(framebuffer),
-                                                     std::move(commandList),
-                                                     std::move(textures)
+    return create_step_immediately<TextureOver16Draw>(context,
+                                                      std::move(colorTexture),
+                                                      std::move(vertex),
+                                                      std::move(pixel),
+                                                      std::move(framebuffer),
+                                                      std::move(commandList),
+                                                      std::move(textures)
         );
 }

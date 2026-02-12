@@ -4,10 +4,10 @@
 
 #ifndef NVRHI_UNIT_TEST_CONSTANTBUFFER_H
 #define NVRHI_UNIT_TEST_CONSTANTBUFFER_H
-#include "include/scenario/App.h"
+#include "include/scenario/Step.h"
 
 
-struct ConstantBufferDraw : public App {
+struct ConstantBufferDraw : public Step {
     nvrhi::TextureHandle colorTexture;
     nvrhi::ShaderHandle vertex;
     nvrhi::ShaderHandle pixel;
@@ -25,7 +25,7 @@ struct ConstantBufferDraw : public App {
                                 nvrhi::BufferHandle&& constantBuffer,
                                 nvrhi::CommandListHandle&& commandList
         )
-        : App(ctx, "RunDrawCommand", "", ""),
+        : Step(ctx, "RunDrawCommand", "", ""),
           colorTexture(colorTexture),
           vertex(vertex),
           pixel(pixel),
@@ -34,17 +34,17 @@ struct ConstantBufferDraw : public App {
           commandList(commandList) {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
-struct ConstantBuffer : public App {
+struct ConstantBuffer : public Step {
     ConstantBuffer() = delete;
 
     explicit ConstantBuffer(const Context& ctx)
-        : App(ctx, "ConstantBuffer", "", "") {
+        : Step(ctx, "ConstantBuffer", "", "") {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
 

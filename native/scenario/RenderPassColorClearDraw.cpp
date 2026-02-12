@@ -17,7 +17,7 @@ std::string padToMultipleOfFour(std::string input) {
     return input;
 }
 
-AppPtr RunDrawCommand::run(std::string input) {
+StepFuture RunDrawCommand::run(std::string input) {
     std::istringstream iss(input);
     std::string clearColorStr, clearDepthStr, drawStr;
     iss >> clearColorStr >> clearDepthStr >> drawStr;
@@ -57,11 +57,11 @@ AppPtr RunDrawCommand::run(std::string input) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_null_app();
+    return create_null_step();
 }
 
 
-AppPtr RenderPassColorClearDraw::run(std::string) {
+StepFuture RenderPassColorClearDraw::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
     std::ifstream file(shader_dir + "/simple" + extension(), std::ios::in | std::ios::binary);
     if (!file.is_open()) {
@@ -125,7 +125,7 @@ AppPtr RenderPassColorClearDraw::run(std::string) {
 
     auto pipeline = context.nvrhiDevice->createGraphicsPipeline(psoDesc, framebuffer);
 
-    return create_app_immediately<RunDrawCommand>(
+    return create_step_immediately<RunDrawCommand>(
         context,
         std::move(colorTexture),
         std::move(depthTexture),

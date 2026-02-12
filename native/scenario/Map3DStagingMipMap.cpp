@@ -25,7 +25,7 @@ static nvrhi::TextureHandle create3DTexture(const uint32_t width,
 }
 
 
-AppPtr Command3DCopyMipMap::run(std::string _) {
+StepFuture Command3DCopyMipMap::run(std::string _) {
     auto dstTexture = create3DTexture(1010,
                                       1010,
                                       4,
@@ -51,10 +51,10 @@ AppPtr Command3DCopyMipMap::run(std::string _) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_null_app();
+    return create_null_step();
 }
 
-AppPtr WriteStagingBuffer::run(std::string _) {
+StepFuture WriteStagingBuffer::run(std::string _) {
     auto slice = nvrhi::TextureSlice{.mipLevel = static_cast<unsigned int>(mipLevel)}.resolve(staging->getDesc());
 
     size_t row_pitch;
@@ -76,13 +76,13 @@ AppPtr WriteStagingBuffer::run(std::string _) {
     context.nvrhiDevice->unmapStagingTexture(staging);
     auto commandList = context.nvrhiDevice->createCommandList();
 
-    return create_app_immediately<Command3DCopyMipMap>(context,
-                                                       std::move(commandList),
-                                                       std::move(staging),
-                                                       mipLevel);
+    return create_step_immediately<Command3DCopyMipMap>(context,
+                                                        std::move(commandList),
+                                                        std::move(staging),
+                                                        mipLevel);
 }
 
-AppPtr Map3DStagingMipMap::run(std::string _) {
+StepFuture Map3DStagingMipMap::run(std::string _) {
     constexpr int depth = 16;
     constexpr int mipLevels = 2;
     auto images = std::views::iota(0, mipLevels) | std::views::transform([](auto mip) {
@@ -106,8 +106,8 @@ AppPtr Map3DStagingMipMap::run(std::string _) {
     int mipLevelInput = 0;
     std::cout << "WebGPU backend doesn't support mipmapping for staging texture. Defaulting to mip level 0.";
 
-    return create_app_immediately<WriteStagingBuffer>(context,
-                                                      std::move(staging),
-                                                      std::move(images),
-                                                      mipLevelInput);
+    return create_step_immediately<WriteStagingBuffer>(context,
+                                                       std::move(staging),
+                                                       std::move(images),
+                                                       mipLevelInput);
 }

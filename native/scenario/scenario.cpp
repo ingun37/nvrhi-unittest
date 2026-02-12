@@ -6,13 +6,13 @@
 
 #include <iostream>
 
-#include "ChooseApp.h"
+#include "ChooseScenario.h"
 
 void run_app(Context&& ctx) {
 #if defined(EMSCRIPTEN)
     throw std::runtime_error("run_app breaks in Emscripten. Use the scenario runner for emscripten in /web/.");
 #endif
-    AppPtr app_p = create_app_immediately<ChooseApp>(ctx);
+    StepFuture app_p = create_step_immediately<ChooseScenario>(ctx);
     while (true) {
         auto app = app_p.get();
         if (app == nullptr) {
@@ -30,13 +30,13 @@ void run_app(Context&& ctx) {
             std::cout << "> ";
             std::getline(std::cin, input);
         }
-        AppPtr next_app_p = app->run(input.empty() ? app->defaultInput : input);
+        StepFuture next_app_p = app->run(input.empty() ? app->defaultInput : input);
         std::cout << "Repeat (y/n)? default: n" << std::endl;
         std::cout << "> ";
         std::string repeat;
         std::getline(std::cin, repeat);
         if (repeat == "y") {
-            app_p = create_app_immediately(std::move(app));
+            app_p = create_step_immediately(std::move(app));
         } else {
             app_p = std::move(next_app_p);
         }

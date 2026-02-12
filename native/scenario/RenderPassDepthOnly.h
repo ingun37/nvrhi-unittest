@@ -4,10 +4,10 @@
 
 #ifndef NVRHI_UNIT_TEST_RENDERPASSDEPTHONLY_H
 #define NVRHI_UNIT_TEST_RENDERPASSDEPTHONLY_H
-#include "include/scenario/App.h"
+#include "include/scenario/Step.h"
 
 
-struct RunDepthDrawCommand : public App {
+struct RunDepthDrawCommand : public Step {
     nvrhi::TextureHandle texture;
     nvrhi::ShaderHandle vertex;
     nvrhi::ShaderHandle pixel;
@@ -17,14 +17,14 @@ struct RunDepthDrawCommand : public App {
     RunDepthDrawCommand() = delete;
 
     explicit RunDepthDrawCommand(
-        const Context& ctx,
-        nvrhi::TextureHandle&& texture,
-        nvrhi::ShaderHandle&& vertex,
-        nvrhi::ShaderHandle&& pixel,
-        nvrhi::FramebufferHandle&& framebuffer,
-        nvrhi::GraphicsPipelineHandle&& pipeline
-        )
-        : App(ctx, "RunDepthDrawCommand", "", ""),
+        const Context &ctx,
+        nvrhi::TextureHandle &&texture,
+        nvrhi::ShaderHandle &&vertex,
+        nvrhi::ShaderHandle &&pixel,
+        nvrhi::FramebufferHandle &&framebuffer,
+        nvrhi::GraphicsPipelineHandle &&pipeline
+    )
+        : Step(ctx, "RunDepthDrawCommand", "", ""),
           texture(texture),
           vertex(vertex),
           pixel(pixel),
@@ -32,17 +32,17 @@ struct RunDepthDrawCommand : public App {
           pipeline(pipeline) {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
-struct RenderPassDepthOnly : public App {
+struct RenderPassDepthOnly : public Step {
     RenderPassDepthOnly() = delete;
 
-    explicit RenderPassDepthOnly(const Context& ctx)
-        : App(ctx, "RenderPassDepthOnly", "", "") {
+    explicit RenderPassDepthOnly(const Context &ctx)
+        : Step(ctx, "RenderPassDepthOnly", "", "") {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
 

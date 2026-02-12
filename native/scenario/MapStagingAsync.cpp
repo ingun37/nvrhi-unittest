@@ -8,7 +8,7 @@
 #include <ostream>
 #include "Map3DStagingMipMap.h"
 
-AppPtr VerifyStaging::run(std::string) {
+StepFuture VerifyStaging::run(std::string) {
     auto h = stagingTexture->getDesc().height;
     auto w = stagingTexture->getDesc().width;
     for (int i = 0; i < h; i++) {
@@ -17,18 +17,18 @@ AppPtr VerifyStaging::run(std::string) {
             assert(staging_content[i * w + j] == base + j);
         }
     }
-    return create_null_app();
+    return create_null_step();
 }
 
-AppPtr ReadStaging::run(std::string _) {
+StepFuture ReadStaging::run(std::string _) {
     nvrhi::TextureSlice slice{};
     slice = slice.resolve(stagingTexture->getDesc());
     auto rowPitch = std::make_shared<size_t>(0);
 
     auto staging_content = std::make_shared<std::vector<uint32_t> >();
-    AppPromise next_app;
+    StepPromise next_app;
     auto f = next_app.get_future();
-    auto next_app_ptr = std::make_shared<AppPromise>(std::move(next_app));
+    auto next_app_ptr = std::make_shared<StepPromise>(std::move(next_app));
     // auto next_app = std::make_unique<VerifyStaging>(context, stagingTexture, buffer);
 
     context.nvrhiDevice->mapStagingTextureAsync(
@@ -62,7 +62,7 @@ AppPtr ReadStaging::run(std::string _) {
     return f;
 }
 
-AppPtr CopyTextureToStaging::run(std::string) {
+StepFuture CopyTextureToStaging::run(std::string) {
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
     commandList->copyTexture(
@@ -72,10 +72,10 @@ AppPtr CopyTextureToStaging::run(std::string) {
         nvrhi::TextureSlice{}.resolve(texture->getDesc()));
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
-    return create_app_immediately<ReadStaging>(context, std::move(stagingTexture));
+    return create_step_immediately<ReadStaging>(context, std::move(stagingTexture));
 }
 
-AppPtr WriteTextureAndCreateStaging::run(std::string _) {
+StepFuture WriteTextureAndCreateStaging::run(std::string _) {
     nvrhi::TextureSlice slice{};
     slice = slice.resolve(texture->getDesc());
 
@@ -102,17 +102,17 @@ AppPtr WriteTextureAndCreateStaging::run(std::string _) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<CopyTextureToStaging>(context,
-                                                        std::move(texture),
-                                                        context.nvrhiDevice->createStagingTexture(
-                                                            texture->getDesc(),
-                                                            nvrhi::CpuAccessMode::Read)
+    return create_step_immediately<CopyTextureToStaging>(context,
+                                                         std::move(texture),
+                                                         context.nvrhiDevice->createStagingTexture(
+                                                             texture->getDesc(),
+                                                             nvrhi::CpuAccessMode::Read)
         );
 }
 
-AppPtr MapStagingAsync::run(std::string _) {
+StepFuture MapStagingAsync::run(std::string _) {
     nvrhi::TextureDesc desc{.width = 200, .height = 2, .depth = 1, .format = nvrhi::Format::RGBA8_UNORM};
-    return create_app_immediately<WriteTextureAndCreateStaging>(
+    return create_step_immediately<WriteTextureAndCreateStaging>(
         context,
         context.nvrhiDevice->createTexture(desc)
         );

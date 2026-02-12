@@ -6,9 +6,9 @@
 #define NVRHI_UNIT_TEST_TEXTUREOVER16_H
 #include <utility>
 
-#include "include/scenario/App.h"
+#include "include/scenario/Step.h"
 
-struct TextureOver16Draw : public App {
+struct TextureOver16Draw : public Step {
     nvrhi::TextureHandle colorTexture;
     nvrhi::ShaderHandle vertex;
     nvrhi::ShaderHandle pixel;
@@ -18,16 +18,16 @@ struct TextureOver16Draw : public App {
 
     TextureOver16Draw() = delete;
 
-    explicit TextureOver16Draw(const Context& ctx,
-                               nvrhi::TextureHandle&& colorTexture,
-                               nvrhi::ShaderHandle&& vertex,
-                               nvrhi::ShaderHandle&& pixel,
-                               nvrhi::FramebufferHandle&& framebuffer,
-                               nvrhi::CommandListHandle&& commandList,
+    explicit TextureOver16Draw(const Context &ctx,
+                               nvrhi::TextureHandle &&colorTexture,
+                               nvrhi::ShaderHandle &&vertex,
+                               nvrhi::ShaderHandle &&pixel,
+                               nvrhi::FramebufferHandle &&framebuffer,
+                               nvrhi::CommandListHandle &&commandList,
                                std::vector<nvrhi::TextureHandle> textures
 
-        )
-        : App(ctx, "RunDrawCommand", "", ""),
+    )
+        : Step(ctx, "RunDrawCommand", "", ""),
           colorTexture(colorTexture),
           vertex(vertex),
           pixel(pixel),
@@ -36,17 +36,17 @@ struct TextureOver16Draw : public App {
           textures(std::move(textures)) {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
-struct TextureOver16 : public App {
+struct TextureOver16 : public Step {
     TextureOver16() = delete;
 
-    explicit TextureOver16(const Context& ctx)
-        : App(ctx, "TextureOver16", "", "") {
+    explicit TextureOver16(const Context &ctx)
+        : Step(ctx, "TextureOver16", "", "") {
     }
 
-    AppPtr run(std::string) override;
+    StepFuture run(std::string) override;
 };
 
 
