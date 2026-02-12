@@ -22,13 +22,7 @@ AppPtr RunDepthDrawCommand::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<RunDepthDrawCommand>(
-        context,
-        std::move(texture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        std::move(pipeline));
+    return create_null_app();
 }
 
 AppPtr RenderPassDepthOnly::run(std::string) {

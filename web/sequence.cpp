@@ -18,6 +18,7 @@ static std::unique_ptr<std::string> g_input;
 enum Stage { Wait, Next };
 
 struct UserData {
+    bool started = false;
     AppFuture future{};
     AppP current_app = nullptr;
     GLFWwindow* window;
@@ -160,8 +161,9 @@ struct InitAdapter : public App {
 };
 
 void _iter(UserData& user_data) {
-    if (user_data.current_app == nullptr && !user_data.future.valid()) {
+    if (!user_data.started) {
         user_data.future = create_app_immediately<InitAdapter>(user_data);
+        user_data.started = true;
     }
     if (user_data.future.valid()) {
         auto state = user_data.future.wait_for(std::chrono::seconds(0));
@@ -170,9 +172,15 @@ void _iter(UserData& user_data) {
             return;
         }
         auto app = user_data.future.get();
+        if (app == nullptr) {
+            std::cout << "NULL is returned as next app. Terminated. Bye Bye" << std::endl;
+            return;
+        }
         std::cout << "Running: " << app->title << std::endl;
-        std::cout << app->prompt << std::endl;
-        std::cout << "Default value: " << app->defaultInput << std::endl;
+        if (!app->prompt.empty())
+            std::cout << app->prompt << std::endl;
+        if (!app->defaultInput.empty())
+            std::cout << "Default value: " << app->defaultInput << std::endl;
         user_data.current_app = std::move(app);
         return;
     }

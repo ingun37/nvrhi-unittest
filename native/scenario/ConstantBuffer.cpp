@@ -47,17 +47,7 @@ AppPtr ConstantBufferDraw::run(std::string) {
 
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<ConstantBufferDraw>(
-        context,
-        std::move(colorTexture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        context.nvrhiDevice->createBuffer({
-            .byteSize = sizeof(dummy32),
-            .isConstantBuffer = true,
-        }),
-        std::move(commandList));
+    return create_null_app();
 }
 
 AppPtr ConstantBuffer::run(std::string) {

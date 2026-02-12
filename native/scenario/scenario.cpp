@@ -19,12 +19,26 @@ void run_app(Context&& ctx) {
             std::cout << "NULL is (lazily) returned as the next app. Exiting..." << std::endl;
             break;
         }
-        std::cout << app->title << std::endl;
-        std::cout << app->prompt << std::endl;
-        std::cout << "Default value: " << app->defaultInput << std::endl;
-        std::cout << "> ";
         std::string input;
-        std::getline(std::cin, input);
-        app_p = app->run(input.empty() ? app->defaultInput : input);
+        if (app->prompt.empty()) {
+            std::cout << "Running " << app->title << " ... This app doesn't have propmt. Skipping input ..." <<
+                std::endl;
+        } else {
+            std::cout << "Running " << app->title << " ..." << std::endl;
+            std::cout << app->prompt << std::endl;
+            std::cout << "Default value: " << app->defaultInput << std::endl;
+            std::cout << "> ";
+            std::getline(std::cin, input);
+        }
+        AppPtr next_app_p = app->run(input.empty() ? app->defaultInput : input);
+        std::cout << "Repeat (y/n)? default: n" << std::endl;
+        std::cout << "> ";
+        std::string repeat;
+        std::getline(std::cin, repeat);
+        if (repeat == "y") {
+            app_p = create_app_immediately(std::move(app));
+        } else {
+            app_p = std::move(next_app_p);
+        }
     }
 }

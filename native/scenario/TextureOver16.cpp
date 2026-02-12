@@ -59,7 +59,7 @@ AppPtr TextureOver16Draw::run(std::string) {
 
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately(std::move(*this));
+    return create_null_app();
 }
 
 AppPtr TextureOver16::run(std::string) {

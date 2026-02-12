@@ -43,16 +43,23 @@ AppPtr create_app_immediately(Args&&... args) {
     return promise.get_future();
 }
 
-inline AppPtr create_null_app() {
-    AppPromise promise;
-    promise.set_value(nullptr);
-    return promise.get_future();
-}
-
 template <class T> requires std::is_base_of_v<App, T>
 AppPtr create_app_immediately(T&& app) {
     AppPromise promise;
     promise.set_value(std::make_unique<T>(app));
     return promise.get_future();
 }
+
+inline AppPtr create_app_immediately(AppP&& app) {
+    AppPromise promise;
+    promise.set_value(std::move(app));
+    return promise.get_future();
+}
+
+inline AppPtr create_null_app() {
+    AppPromise promise;
+    promise.set_value(nullptr);
+    return promise.get_future();
+}
+
 #endif //NVRHI_UNIT_TEST_APP_H

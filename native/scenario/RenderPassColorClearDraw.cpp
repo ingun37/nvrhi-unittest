@@ -57,14 +57,7 @@ AppPtr RunDrawCommand::run(std::string input) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_app_immediately<RunDrawCommand>(
-        context,
-        std::move(colorTexture),
-        std::move(depthTexture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        std::move(pipeline));
+    return create_null_app();
 }
 
 
