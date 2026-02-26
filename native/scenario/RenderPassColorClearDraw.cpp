@@ -8,6 +8,89 @@
 #include <fstream>
 #include "backend.h"
 
+namespace {
+struct Payload {
+    nvrhi::TextureHandle colorTexture;
+    nvrhi::TextureHandle depthTexture;
+    nvrhi::ShaderHandle vertex;
+    nvrhi::ShaderHandle pixel;
+    nvrhi::FramebufferHandle framebuffer;
+    nvrhi::GraphicsPipelineHandle pipeline;
+};
+
+struct RunDrawCommand : public Step {
+    Payload payload;
+
+    RunDrawCommand() = delete;
+
+private:
+    static std::string prompt() {
+        return
+            "  First boolean: clear color\n"
+            "  Second boolean: clear depth\n"
+            "  Third boolean: execute draw command\n"
+            "Examples:\n"
+            "  true true true    -> clear color/depth and draw\n"
+            "  true false true   -> clear color, draw (keep depth)\n"
+            "  false true true   -> clear depth, draw (keep color)\n"
+            "  true true false   -> clear color/depth only, no draw\n"
+            "  false false false -> no clear, no draw";
+    }
+
+public:
+    explicit RunDrawCommand(
+        const Context& ctx,
+        Payload&& payload
+        )
+        : Step(ctx, "RunDrawCommand", prompt(), "true true true"),
+          payload(std::move(payload)) {
+    }
+
+    StepFuture run(std::string input) override {
+        std::istringstream iss(input);
+        std::string clearColorStr, clearDepthStr, drawStr;
+        iss >> clearColorStr >> clearDepthStr >> drawStr;
+
+        bool shouldClearColor = clearColorStr == "true";
+        bool shouldClearDepth = clearDepthStr == "true";
+        bool shouldDraw = drawStr == "true";
+
+        auto commandList = context.nvrhiDevice->createCommandList();
+        commandList->open();
+
+        if (shouldClearColor) {
+            const nvrhi::FramebufferAttachment& att = payload.framebuffer->getDesc().colorAttachments[0];
+            std::cout << "Clearing Color..." << std::endl;
+            commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
+        }
+
+        if (shouldClearDepth) {
+            std::cout << "Clearing depth..." << std::endl;
+            const nvrhi::FramebufferAttachment& att = payload.framebuffer->getDesc().depthAttachment;
+
+            commandList->clearDepthStencilTexture(att.texture, att.subresources, true, 0.6f, true, 64);
+        }
+
+        nvrhi::GraphicsState state;
+        state.pipeline = payload.pipeline;
+        state.framebuffer = payload.framebuffer;
+        state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
+        commandList->setGraphicsState(state);
+        nvrhi::DrawArguments args{};
+        if (shouldDraw) {
+            std::cout << "Drawing..." << std::endl;
+            args.vertexCount = 3;
+            commandList->draw(args);
+        }
+
+        commandList->close();
+        context.nvrhiDevice->executeCommandList(commandList);
+
+        return create_null_step();
+    }
+};
+}
+
 std::string padToMultipleOfFour(std::string input) {
     size_t remainder = input.length() % 4;
     if (remainder != 0) {
@@ -16,50 +99,6 @@ std::string padToMultipleOfFour(std::string input) {
     }
     return input;
 }
-
-StepFuture RunDrawCommand::run(std::string input) {
-    std::istringstream iss(input);
-    std::string clearColorStr, clearDepthStr, drawStr;
-    iss >> clearColorStr >> clearDepthStr >> drawStr;
-
-    bool shouldClearColor = clearColorStr == "true";
-    bool shouldClearDepth = clearDepthStr == "true";
-    bool shouldDraw = drawStr == "true";
-
-    auto commandList = context.nvrhiDevice->createCommandList();
-    commandList->open();
-
-    if (shouldClearColor) {
-        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().colorAttachments[0];
-        std::cout << "Clearing Color..." << std::endl;
-        commandList->clearTextureFloat(att.texture, att.subresources, nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
-    }
-
-    if (shouldClearDepth) {
-        std::cout << "Clearing depth..." << std::endl;
-        const nvrhi::FramebufferAttachment& att = framebuffer->getDesc().depthAttachment;
-
-        commandList->clearDepthStencilTexture(att.texture, att.subresources, true, 0.6f, true, 64);
-    }
-
-    nvrhi::GraphicsState state;
-    state.pipeline = pipeline;
-    state.framebuffer = framebuffer;
-    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
-    commandList->setGraphicsState(state);
-    nvrhi::DrawArguments args{};
-    if (shouldDraw) {
-        std::cout << "Drawing..." << std::endl;
-        args.vertexCount = 3;
-        commandList->draw(args);
-    }
-
-    commandList->close();
-    context.nvrhiDevice->executeCommandList(commandList);
-
-    return create_null_step();
-}
-
 
 StepFuture RenderPassColorClearDraw::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
@@ -127,10 +166,12 @@ StepFuture RenderPassColorClearDraw::run(std::string) {
 
     return create_step_immediately<RunDrawCommand>(
         context,
-        std::move(colorTexture),
-        std::move(depthTexture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        std::move(pipeline));
+        Payload{
+            std::move(colorTexture),
+            std::move(depthTexture),
+            std::move(vertex),
+            std::move(pixel),
+            std::move(framebuffer),
+            std::move(pipeline)
+        });
 }
