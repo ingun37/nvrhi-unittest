@@ -21,6 +21,8 @@ struct Payload {
     nvrhi::FramebufferHandle framebuffer;
     nvrhi::BufferHandle constantBuffer;
     nvrhi::CommandListHandle commandList;
+    nvrhi::GraphicsPipelineHandle pipeline;
+    nvrhi::BindingLayoutHandle binding_layout;
 };
 
 struct ConstantBufferDraw : public Step {
@@ -36,33 +38,12 @@ struct ConstantBufferDraw : public Step {
     }
 
     StepFuture run(std::string) override {
-        nvrhi::GraphicsPipelineDesc gpd;
-        gpd.VS = payload.vertex;
-        gpd.PS = payload.pixel;
-        gpd.primType = nvrhi::PrimitiveType::TriangleList;
-        gpd.renderState.depthStencilState.depthTestEnable = false;
-        gpd.renderState.blendState.targets[0].blendEnable = true;
-        gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
-        gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
-        gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
-        gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
-        gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
-        gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
-        nvrhi::BindingLayoutItem bli{};
-        bli.setSlot(0);
-        bli.setType(nvrhi::ResourceType::ConstantBuffer);
-        nvrhi::BindingLayoutDesc bld{};
-        bld.setVisibility(nvrhi::ShaderType::AllGraphics);
-        bld.addItem(bli);
-        auto bl = context.nvrhiDevice->createBindingLayout(bld);
-        gpd.addBindingLayout(bl);
-        auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, payload.framebuffer);
         auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
         nvrhi::BindingSetDesc bsd{};
         bsd.addItem(bsi);
-        auto bs = context.nvrhiDevice->createBindingSet(bsd, bl);
+        auto bs = context.nvrhiDevice->createBindingSet(bsd, payload.binding_layout);
         nvrhi::GraphicsState state;
-        state.setPipeline(pipeline);
+        state.setPipeline(payload.pipeline);
         state.setFramebuffer(payload.framebuffer);
         state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
         state.addBindingSet(bs);
@@ -129,6 +110,28 @@ StepFuture MovableTriangle::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
+    nvrhi::GraphicsPipelineDesc gpd;
+    gpd.VS = vertex;
+    gpd.PS = pixel;
+    gpd.primType = nvrhi::PrimitiveType::TriangleList;
+    gpd.renderState.depthStencilState.depthTestEnable = true;
+    gpd.renderState.blendState.targets[0].blendEnable = true;
+    gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
+    gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
+    gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
+    gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
+    gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
+    gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
+    nvrhi::BindingLayoutItem bli{};
+    bli.setSlot(0);
+    bli.setType(nvrhi::ResourceType::ConstantBuffer);
+    nvrhi::BindingLayoutDesc bld{};
+    bld.setVisibility(nvrhi::ShaderType::AllGraphics);
+    bld.addItem(bli);
+    auto binding_layout = context.nvrhiDevice->createBindingLayout(bld);
+    gpd.addBindingLayout(binding_layout);
+    auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, framebuffer);
+
     return create_step_immediately<ConstantBufferDraw>(context,
                                                        Payload{
                                                            std::move(colorTexture),
@@ -136,6 +139,8 @@ StepFuture MovableTriangle::run(std::string) {
                                                            std::move(pixel),
                                                            std::move(framebuffer),
                                                            std::move(constantBuffer),
-                                                           std::move(commandList)
+                                                           std::move(commandList),
+                                                           std::move(pipeline),
+                                                           std::move(binding_layout)
                                                        });
 }
