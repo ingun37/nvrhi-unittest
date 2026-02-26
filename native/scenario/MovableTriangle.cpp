@@ -16,6 +16,7 @@ static float4x4 identity = {
 
 struct Payload {
     nvrhi::TextureHandle colorTexture;
+    nvrhi::TextureHandle depthTexture;
     nvrhi::ShaderHandle vertex;
     nvrhi::ShaderHandle pixel;
     nvrhi::FramebufferHandle framebuffer;
@@ -94,8 +95,19 @@ StepFuture MovableTriangle::run(std::string) {
     nvrhi::FramebufferAttachment colorAttachment{};
     colorAttachment.setTexture(colorTexture);
 
+    nvrhi::TextureDesc depthTextureDesc{};
+    depthTextureDesc.setHeight(256);
+    depthTextureDesc.setWidth(256);
+    depthTextureDesc.setFormat(nvrhi::Format::D32);
+    depthTextureDesc.setIsRenderTarget(true);
+    auto depthTexture = context.nvrhiDevice->createTexture(depthTextureDesc);
+
+    nvrhi::FramebufferAttachment depthAttachment{};
+    depthAttachment.setTexture(depthTexture);
+
     nvrhi::FramebufferDesc framebufferDesc{};
     framebufferDesc.addColorAttachment(colorAttachment);
+    framebufferDesc.setDepthAttachment(depthAttachment);
     auto framebuffer = context.nvrhiDevice->createFramebuffer(framebufferDesc);
 
     nvrhi::BufferDesc bd{};
@@ -115,6 +127,7 @@ StepFuture MovableTriangle::run(std::string) {
     gpd.PS = pixel;
     gpd.primType = nvrhi::PrimitiveType::TriangleList;
     gpd.renderState.depthStencilState.depthTestEnable = true;
+    gpd.renderState.depthStencilState.depthWriteEnable = true;
     gpd.renderState.blendState.targets[0].blendEnable = true;
     gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
     gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
@@ -135,6 +148,7 @@ StepFuture MovableTriangle::run(std::string) {
     return create_step_immediately<ConstantBufferDraw>(context,
                                                        Payload{
                                                            std::move(colorTexture),
+                                                           std::move(depthTexture),
                                                            std::move(vertex),
                                                            std::move(pixel),
                                                            std::move(framebuffer),
