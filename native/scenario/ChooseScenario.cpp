@@ -9,6 +9,7 @@
 #include "../RenderPassDepthOnly.h"
 #include "../ConstantBuffer.h"
 #include "../TextureOver16.h"
+#include "../ConstantBlend.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -47,7 +48,8 @@ using MyScenarios = AppRegistry<
     RenderPassColorClearDraw,
     RenderPassDepthOnly,
     ConstantBuffer,
-    TextureOver16
+    TextureOver16,
+    ConstantBlend
 >;
 
 std::string getPrompt() {
