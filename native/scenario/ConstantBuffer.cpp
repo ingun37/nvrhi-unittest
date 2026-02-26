@@ -8,46 +8,70 @@
 #include "backend.h"
 constexpr float dummy32[8] = {0.0, 0.5, 0.9, 1.0};
 
-StepFuture ConstantBufferDraw::run(std::string) {
-    nvrhi::GraphicsPipelineDesc gpd;
-    gpd.VS = vertex;
-    gpd.PS = pixel;
-    gpd.primType = nvrhi::PrimitiveType::TriangleList;
-    gpd.renderState.depthStencilState.depthTestEnable = false;
-    gpd.renderState.blendState.targets[0].blendEnable = true;
-    gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
-    gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
-    gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
-    gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
-    gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
-    gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
-    nvrhi::BindingLayoutItem bli{};
-    bli.setSlot(0);
-    bli.setType(nvrhi::ResourceType::ConstantBuffer);
-    nvrhi::BindingLayoutDesc bld{};
-    bld.setVisibility(nvrhi::ShaderType::AllGraphics);
-    bld.addItem(bli);
-    auto bl = context.nvrhiDevice->createBindingLayout(bld);
-    gpd.addBindingLayout(bl);
-    auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, framebuffer);
-    auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, constantBuffer);
-    nvrhi::BindingSetDesc bsd{};
-    bsd.addItem(bsi);
-    auto bs = context.nvrhiDevice->createBindingSet(bsd, bl);
-    nvrhi::GraphicsState state;
-    state.setPipeline(pipeline);
-    state.setFramebuffer(framebuffer);
-    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
-    state.addBindingSet(bs);
+namespace {
+struct Payload {
+    nvrhi::TextureHandle colorTexture;
+    nvrhi::ShaderHandle vertex;
+    nvrhi::ShaderHandle pixel;
+    nvrhi::FramebufferHandle framebuffer;
+    nvrhi::BufferHandle constantBuffer;
+    nvrhi::CommandListHandle commandList;
+};
 
-    commandList->open();
-    commandList->setGraphicsState(state);
-    commandList->draw({.vertexCount = 3});
-    commandList->close();
+struct ConstantBufferDraw : public Step {
+    Payload payload;
 
-    context.nvrhiDevice->executeCommandList(commandList);
+    ConstantBufferDraw() = delete;
 
-    return create_null_step();
+    explicit ConstantBufferDraw(const Context& ctx,
+                                Payload&& payload
+        )
+        : Step(ctx, "RunDrawCommand", "", ""),
+          payload(std::move(payload)) {
+    }
+
+    StepFuture run(std::string) override {
+        nvrhi::GraphicsPipelineDesc gpd;
+        gpd.VS = payload.vertex;
+        gpd.PS = payload.pixel;
+        gpd.primType = nvrhi::PrimitiveType::TriangleList;
+        gpd.renderState.depthStencilState.depthTestEnable = false;
+        gpd.renderState.blendState.targets[0].blendEnable = true;
+        gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
+        gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
+        gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
+        gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
+        gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
+        gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
+        nvrhi::BindingLayoutItem bli{};
+        bli.setSlot(0);
+        bli.setType(nvrhi::ResourceType::ConstantBuffer);
+        nvrhi::BindingLayoutDesc bld{};
+        bld.setVisibility(nvrhi::ShaderType::AllGraphics);
+        bld.addItem(bli);
+        auto bl = context.nvrhiDevice->createBindingLayout(bld);
+        gpd.addBindingLayout(bl);
+        auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, payload.framebuffer);
+        auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
+        nvrhi::BindingSetDesc bsd{};
+        bsd.addItem(bsi);
+        auto bs = context.nvrhiDevice->createBindingSet(bsd, bl);
+        nvrhi::GraphicsState state;
+        state.setPipeline(pipeline);
+        state.setFramebuffer(payload.framebuffer);
+        state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
+        state.addBindingSet(bs);
+
+        payload.commandList->open();
+        payload.commandList->setGraphicsState(state);
+        payload.commandList->draw({.vertexCount = 3});
+        payload.commandList->close();
+
+        context.nvrhiDevice->executeCommandList(payload.commandList);
+
+        return create_null_step();
+    }
+};
 }
 
 StepFuture ConstantBuffer::run(std::string) {
@@ -101,10 +125,12 @@ StepFuture ConstantBuffer::run(std::string) {
     context.nvrhiDevice->executeCommandList(commandList);
 
     return create_step_immediately<ConstantBufferDraw>(context,
-                                                       std::move(colorTexture),
-                                                       std::move(vertex),
-                                                       std::move(pixel),
-                                                       std::move(framebuffer),
-                                                       std::move(constantBuffer),
-                                                       std::move(commandList));
+                                                       Payload{
+                                                           std::move(colorTexture),
+                                                           std::move(vertex),
+                                                           std::move(pixel),
+                                                           std::move(framebuffer),
+                                                           std::move(constantBuffer),
+                                                           std::move(commandList)
+                                                       });
 }

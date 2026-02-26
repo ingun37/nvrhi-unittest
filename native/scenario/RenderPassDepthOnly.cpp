@@ -5,24 +5,48 @@
 #include "RenderPassDepthOnly.h"
 
 
-StepFuture RunDepthDrawCommand::run(std::string) {
-    auto commandList = context.nvrhiDevice->createCommandList();
-    commandList->open();
+namespace {
+    struct Payload {
+        nvrhi::TextureHandle texture;
+        nvrhi::ShaderHandle vertex;
+        nvrhi::ShaderHandle pixel;
+        nvrhi::FramebufferHandle framebuffer;
+        nvrhi::GraphicsPipelineHandle pipeline;
+    };
 
-    nvrhi::GraphicsState state;
-    state.pipeline = pipeline;
-    state.framebuffer = framebuffer;
-    state.viewport.addViewportAndScissorRect(framebuffer->getFramebufferInfo().getViewport());
-    commandList->setGraphicsState(state);
+    struct RunDepthDrawCommand : public Step {
+        Payload payload;
 
-    nvrhi::DrawArguments args;
-    args.vertexCount = 3;
-    commandList->draw(args);
+        RunDepthDrawCommand() = delete;
 
-    commandList->close();
-    context.nvrhiDevice->executeCommandList(commandList);
+        explicit RunDepthDrawCommand(
+            const Context &ctx,
+            Payload &&payload
+        )
+            : Step(ctx, "RunDepthDrawCommand", "", ""),
+              payload(std::move(payload)) {
+        }
 
-    return create_null_step();
+        StepFuture run(std::string) override {
+            auto commandList = context.nvrhiDevice->createCommandList();
+            commandList->open();
+
+            nvrhi::GraphicsState state;
+            state.pipeline = payload.pipeline;
+            state.framebuffer = payload.framebuffer;
+            state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
+            commandList->setGraphicsState(state);
+
+            nvrhi::DrawArguments args;
+            args.vertexCount = 3;
+            commandList->draw(args);
+
+            commandList->close();
+            context.nvrhiDevice->executeCommandList(commandList);
+
+            return create_null_step();
+        }
+    };
 }
 
 StepFuture RenderPassDepthOnly::run(std::string) {
@@ -83,9 +107,11 @@ StepFuture RenderPassDepthOnly::run(std::string) {
 
     return create_step_immediately<RunDepthDrawCommand>(
         context,
-        std::move(depthTexture),
-        std::move(vertex),
-        std::move(pixel),
-        std::move(framebuffer),
-        std::move(pipeline));
+        Payload{
+            std::move(depthTexture),
+            std::move(vertex),
+            std::move(pixel),
+            std::move(framebuffer),
+            std::move(pipeline)
+        });
 }
