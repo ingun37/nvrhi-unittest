@@ -13,8 +13,12 @@ namespace {
 using float4 = std::array<float, 4>;
 using float4x4 = std::array<float4, 4>;
 static float4x4 identity = {
-    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
+    {{1, 0, 0, 0},
+     {0, 1, 0, 0},
+     {0, 0, 1, 0},
+     {0, 0, 0, 1}}
 };
+
 
 struct Payload {
     nvrhi::TextureHandle colorTexture;
@@ -89,8 +93,9 @@ void run_(std::string input, const Payload& payload, const Context& context, flo
     std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
     auto state = make_state(context, payload, hold);
     payload.commandList->open();
-    identity[0][3] = x;
-    payload.commandList->writeBuffer(payload.constantBuffer, &identity, sizeof(identity));
+    float4x4 mat = identity;
+    mat[3][0] = x;
+    payload.commandList->writeBuffer(payload.constantBuffer, &mat, sizeof(mat));
     payload.commandList->setGraphicsState(state);
     payload.commandList->draw({.vertexCount = 3});
     payload.commandList->close();
