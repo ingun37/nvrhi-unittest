@@ -12,13 +12,21 @@
 namespace {
 using float4 = std::array<float, 4>;
 using float4x4 = std::array<float4, 4>;
-static float4x4 identity = {
+
+
+constexpr float4x4 identity = {
     {{1, 0, 0, 0},
      {0, 1, 0, 0},
      {0, 0, 1, 0},
      {0, 0, 0, 1}}
 };
 
+struct Uniform {
+    float4 color = {1, 0, 0, 1};
+    float4x4 transform = identity;
+};
+
+constexpr Uniform uniform_example;
 
 struct Payload {
     nvrhi::TextureHandle colorTexture;
@@ -81,7 +89,7 @@ nvrhi::GraphicsState make_state(const Context& context,
     return std::move(state);
 }
 
-void run_(std::string input, const Payload& payload, const Context& context, float x) {
+void run_(std::string input, const Payload& payload, const Context& context, float x, float4 color) {
     int depthBias = 0;
     try {
         depthBias = std::stoi(input);
@@ -93,9 +101,10 @@ void run_(std::string input, const Payload& payload, const Context& context, flo
     std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
     auto state = make_state(context, payload, hold);
     payload.commandList->open();
-    float4x4 mat = identity;
-    mat[3][0] = x;
-    payload.commandList->writeBuffer(payload.constantBuffer, &mat, sizeof(mat));
+    Uniform uniform{};
+    uniform.color = color;
+    uniform.transform[3][0] = x;
+    payload.commandList->writeBuffer(payload.constantBuffer, &uniform, sizeof(uniform));
     payload.commandList->setGraphicsState(state);
     payload.commandList->draw({.vertexCount = 3});
     payload.commandList->close();
@@ -115,6 +124,7 @@ private:
 
 public:
     float x = 0;
+    float4 color = {1, 0, 0, 1};
 
     DrawBase(const Context& ctx,
              Payload&& payload
@@ -124,7 +134,7 @@ public:
     }
 
     StepFuture run(std::string input) override {
-        run_(input, payload, context, x);
+        run_(input, payload, context, x, color);
 
         return create_null_step();
     }
@@ -136,6 +146,7 @@ struct Draw2 : public DrawBase {
     StepFuture run(std::string input) override {
         std::cout << "DRAW -- 2 --" << std::endl;
         x = 0.2;
+        color = {0, 1, 0, 1};
         DrawBase::run(input);
         return create_null_step();
     }
@@ -146,6 +157,8 @@ struct Draw1 : public DrawBase {
 
     StepFuture run(std::string input) override {
         std::cout << "DRAW -- 1 --" << std::endl;
+        x = 0.0;
+        color = {1, 0, 0, 1};
         DrawBase::run(input);
         return create_step_immediately<Draw2>(context, std::move(payload));
     }
@@ -228,13 +241,13 @@ StepFuture MovableTriangle::run(std::string) {
 
     nvrhi::BufferDesc bd{};
     bd.setIsConstantBuffer(true);
-    bd.setByteSize(sizeof(identity));
+    bd.setByteSize(sizeof(uniform_example));
 
     auto constantBuffer = context.nvrhiDevice->createBuffer(bd);
 
     auto commandList = context.nvrhiDevice->createCommandList();
     commandList->open();
-    commandList->writeBuffer(constantBuffer, &identity, sizeof(identity));
+    commandList->writeBuffer(constantBuffer, &uniform_example, sizeof(uniform_example));
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
