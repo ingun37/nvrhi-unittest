@@ -5,6 +5,8 @@
 #include "MovableTriangle.h"
 #include <iostream>
 #include <fstream>
+#include <list>
+
 #include "backend.h"
 
 namespace {
@@ -22,41 +24,120 @@ struct Payload {
     nvrhi::FramebufferHandle framebuffer;
     nvrhi::BufferHandle constantBuffer;
     nvrhi::CommandListHandle commandList;
-    nvrhi::GraphicsPipelineHandle pipeline;
-    nvrhi::BindingLayoutHandle binding_layout;
 };
 
-struct ConstantBufferDraw : public Step {
+nvrhi::BindingLayoutHandle make_binding_layout(const nvrhi::DeviceHandle& device) {
+    nvrhi::BindingLayoutItem bli{};
+    bli.setSlot(0);
+    bli.setType(nvrhi::ResourceType::ConstantBuffer);
+    nvrhi::BindingLayoutDesc bld{};
+    bld.setVisibility(nvrhi::ShaderType::AllGraphics);
+    bld.addItem(bli);
+    return device->createBindingLayout(bld);
+}
+
+nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
+                                            const Payload& payload,
+                                            const nvrhi::BindingLayoutHandle& binding_layout) {
+    nvrhi::GraphicsPipelineDesc gpd;
+    gpd.VS = payload.vertex;
+    gpd.PS = payload.pixel;
+    gpd.primType = nvrhi::PrimitiveType::TriangleList;
+    gpd.renderState.depthStencilState.depthTestEnable = true;
+    gpd.renderState.depthStencilState.depthWriteEnable = true;
+    gpd.renderState.blendState.targets[0].blendEnable = true;
+    gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
+    gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
+    gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
+    gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
+    gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
+    gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
+
+    gpd.addBindingLayout(binding_layout);
+    return device->createGraphicsPipeline(gpd, payload.framebuffer);
+}
+
+nvrhi::GraphicsState make_state(const Context& context,
+                                const Payload& payload,
+                                std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold) {
+    auto binding_layout = make_binding_layout(context.nvrhiDevice);
+    hold.emplace_back(binding_layout);
+    auto pipeline = make_pipeline(context.nvrhiDevice, payload, binding_layout);
+    hold.emplace_back(pipeline);
+    auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
+    nvrhi::BindingSetDesc bsd{};
+    bsd.addItem(bsi);
+    auto bs = context.nvrhiDevice->createBindingSet(bsd, binding_layout);
+    hold.emplace_back(bs);
+    nvrhi::GraphicsState state;
+    state.setPipeline(pipeline);
+    state.setFramebuffer(payload.framebuffer);
+    state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
+    state.addBindingSet(bs);
+    return std::move(state);
+}
+
+void run_(std::string input, const Payload& payload, const Context& context) {
+    int depthBias = 0;
+    try {
+        depthBias = std::stoi(input);
+    } catch (...) {
+        std::cout << "Invalid input: " << input << ", using 0" << std::endl;
+    }
+
+    std::cout << "Using depth bias: " << depthBias << std::endl;
+    std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
+    auto state = make_state(context, payload, hold);
+    payload.commandList->open();
+    payload.commandList->setGraphicsState(state);
+    payload.commandList->draw({.vertexCount = 3});
+    payload.commandList->close();
+
+    context.nvrhiDevice->executeCommandList(payload.commandList);
+}
+
+struct DrawBase : public Step {
     Payload payload;
 
-    ConstantBufferDraw() = delete;
+    DrawBase() = delete;
 
-    explicit ConstantBufferDraw(const Context& ctx,
-                                Payload&& payload
+private:
+    static std::string prompt() {
+        return "Enter depth bias (float):";
+    }
+
+public:
+    DrawBase(const Context& ctx,
+             Payload&& payload
         )
-        : Step(ctx, "RunDrawCommand", "", ""),
+        : Step(ctx, "RunDrawCommand", prompt(), "0"),
           payload(std::move(payload)) {
     }
 
-    StepFuture run(std::string) override {
-        auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
-        nvrhi::BindingSetDesc bsd{};
-        bsd.addItem(bsi);
-        auto bs = context.nvrhiDevice->createBindingSet(bsd, payload.binding_layout);
-        nvrhi::GraphicsState state;
-        state.setPipeline(payload.pipeline);
-        state.setFramebuffer(payload.framebuffer);
-        state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
-        state.addBindingSet(bs);
-
-        payload.commandList->open();
-        payload.commandList->setGraphicsState(state);
-        payload.commandList->draw({.vertexCount = 3});
-        payload.commandList->close();
-
-        context.nvrhiDevice->executeCommandList(payload.commandList);
+    StepFuture run(std::string input) override {
+        run_(input, payload, context);
 
         return create_null_step();
+    }
+};
+
+struct Draw2 : public DrawBase {
+    using DrawBase::DrawBase;
+
+    StepFuture run(std::string input) override {
+        std::cout << "Running draw 2" << std::endl;
+        DrawBase::run(input);
+        return create_null_step();
+    }
+};
+
+struct Draw1 : public DrawBase {
+    using DrawBase::DrawBase;
+
+    StepFuture run(std::string input) override {
+        std::cout << "Running draw 1" << std::endl;
+        DrawBase::run(input);
+        return create_step_immediately<Draw2>(context, std::move(payload));
     }
 };
 }
@@ -122,39 +203,14 @@ StepFuture MovableTriangle::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    nvrhi::GraphicsPipelineDesc gpd;
-    gpd.VS = vertex;
-    gpd.PS = pixel;
-    gpd.primType = nvrhi::PrimitiveType::TriangleList;
-    gpd.renderState.depthStencilState.depthTestEnable = true;
-    gpd.renderState.depthStencilState.depthWriteEnable = true;
-    gpd.renderState.blendState.targets[0].blendEnable = true;
-    gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
-    gpd.renderState.blendState.targets[0].destBlend = nvrhi::BlendFactor::OneMinusSrcAlpha;
-    gpd.renderState.blendState.targets[0].blendOp = nvrhi::BlendOp::Add;
-    gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
-    gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
-    gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
-    nvrhi::BindingLayoutItem bli{};
-    bli.setSlot(0);
-    bli.setType(nvrhi::ResourceType::ConstantBuffer);
-    nvrhi::BindingLayoutDesc bld{};
-    bld.setVisibility(nvrhi::ShaderType::AllGraphics);
-    bld.addItem(bli);
-    auto binding_layout = context.nvrhiDevice->createBindingLayout(bld);
-    gpd.addBindingLayout(binding_layout);
-    auto pipeline = context.nvrhiDevice->createGraphicsPipeline(gpd, framebuffer);
-
-    return create_step_immediately<ConstantBufferDraw>(context,
-                                                       Payload{
-                                                           std::move(colorTexture),
-                                                           std::move(depthTexture),
-                                                           std::move(vertex),
-                                                           std::move(pixel),
-                                                           std::move(framebuffer),
-                                                           std::move(constantBuffer),
-                                                           std::move(commandList),
-                                                           std::move(pipeline),
-                                                           std::move(binding_layout)
-                                                       });
+    return create_step_immediately<Draw1>(context,
+                                          Payload{
+                                              std::move(colorTexture),
+                                              std::move(depthTexture),
+                                              std::move(vertex),
+                                              std::move(pixel),
+                                              std::move(framebuffer),
+                                              std::move(constantBuffer),
+                                              std::move(commandList),
+                                          });
 }

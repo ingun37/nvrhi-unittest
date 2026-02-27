@@ -20,7 +20,7 @@ VertexOutput vs(
 )
 {
 	VertexOutput o;
-	o.position = mul(transform, float4(g_positions[i_vertexId], 0.0, 1.0));
+	o.position = mul(transform, float4(g_positions[i_vertexId], 0.5, 1.0));
 	return o;
 }
 [shader("fragment")]
