@@ -77,7 +77,7 @@ nvrhi::GraphicsState make_state(const Context& context,
     return std::move(state);
 }
 
-void run_(std::string input, const Payload& payload, const Context& context) {
+void run_(std::string input, const Payload& payload, const Context& context, float x) {
     int depthBias = 0;
     try {
         depthBias = std::stoi(input);
@@ -89,6 +89,8 @@ void run_(std::string input, const Payload& payload, const Context& context) {
     std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
     auto state = make_state(context, payload, hold);
     payload.commandList->open();
+    identity[0][3] = x;
+    payload.commandList->writeBuffer(payload.constantBuffer, &identity, sizeof(identity));
     payload.commandList->setGraphicsState(state);
     payload.commandList->draw({.vertexCount = 3});
     payload.commandList->close();
@@ -107,6 +109,8 @@ private:
     }
 
 public:
+    float x = 0;
+
     DrawBase(const Context& ctx,
              Payload&& payload
         )
@@ -115,7 +119,7 @@ public:
     }
 
     StepFuture run(std::string input) override {
-        run_(input, payload, context);
+        run_(input, payload, context, x);
 
         return create_null_step();
     }
@@ -125,7 +129,8 @@ struct Draw2 : public DrawBase {
     using DrawBase::DrawBase;
 
     StepFuture run(std::string input) override {
-        std::cout << "Running draw 2" << std::endl;
+        std::cout << "DRAW -- 2 --" << std::endl;
+        x = 0.2;
         DrawBase::run(input);
         return create_null_step();
     }
@@ -135,9 +140,34 @@ struct Draw1 : public DrawBase {
     using DrawBase::DrawBase;
 
     StepFuture run(std::string input) override {
-        std::cout << "Running draw 1" << std::endl;
+        std::cout << "DRAW -- 1 --" << std::endl;
         DrawBase::run(input);
         return create_step_immediately<Draw2>(context, std::move(payload));
+    }
+};
+
+struct Clear : public Step {
+    Payload payload;
+
+    Clear(
+        const Context& ctx,
+        Payload&& payload)
+        : Step(ctx, "Clear", "", ""),
+          payload(std::move(payload)) {
+    }
+
+    StepFuture run(std::string input) override {
+        const nvrhi::FramebufferAttachment& colorA = payload.framebuffer->getDesc().colorAttachments[0];
+        const nvrhi::FramebufferAttachment& depthA = payload.framebuffer->getDesc().depthAttachment;
+
+        auto commandList = payload.commandList;
+        commandList->open();
+        commandList->clearTextureFloat(colorA.texture, colorA.subresources, {0, 0, 0, 0});
+        commandList->clearDepthStencilTexture(depthA.texture, depthA.subresources, true, 1.0f, false, 0);
+        commandList->close();
+        context.nvrhiDevice->executeCommandList(commandList);
+
+        return create_step_immediately<Draw1>(context, std::move(payload));
     }
 };
 }
@@ -203,7 +233,7 @@ StepFuture MovableTriangle::run(std::string) {
     commandList->close();
     context.nvrhiDevice->executeCommandList(commandList);
 
-    return create_step_immediately<Draw1>(context,
+    return create_step_immediately<Clear>(context,
                                           Payload{
                                               std::move(colorTexture),
                                               std::move(depthTexture),
