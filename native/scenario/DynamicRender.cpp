@@ -21,12 +21,27 @@ constexpr float4x4 identity = {
      {0, 0, 0, 1}}
 };
 
+float4x4 translate_x(float x) {
+    return {
+        {{1, 0, 0, 0},
+         {0, 1, 0, 0},
+         {0, 0, 1, 0},
+         {x, 0, 0, 1}
+        }
+    };
+}
+
 struct Uniform {
     float4 color = {1, 0, 0, 1};
     float4x4 transform = identity;
 };
 
 constexpr Uniform uniform_example;
+
+struct Param {
+    float slopeScale;
+    Uniform uniform;
+};
 
 struct Payload {
     nvrhi::BufferHandle vertex_buffer;
@@ -72,6 +87,7 @@ nvrhi::GraphicsPipelineHandle make_graphics_pipeline(const nvrhi::DeviceHandle& 
     gpd.VS = payload.vertex;
     gpd.PS = payload.pixel;
     gpd.primType = nvrhi::PrimitiveType::TriangleStrip;
+    gpd.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
     gpd.renderState.depthStencilState.depthTestEnable = true;
     gpd.renderState.depthStencilState.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
     gpd.renderState.depthStencilState.depthWriteEnable = true;
@@ -159,25 +175,34 @@ struct Draw : Step {
 
     Draw() = delete;
 
-    Draw(const Context& ctx, Payload&& payload)
+    std::vector<Param> params;
+
+    Draw(const Context& ctx, Payload&& payload, std::vector<Param>&& params)
         : Step(ctx, "Draw", "", ""),
-          payload(std::move(payload)) {
+          payload(std::move(payload)),
+          params(params) {
     }
 
     StepFuture run(std::string) override {
         std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
-        auto state = make_graphics_state(context, payload, hold, 0);
+        auto param = params[params.size() - 1];
+        auto uniform = param.uniform;
+        params.pop_back();
+
+        auto state = make_graphics_state(context, payload, hold, param.slopeScale);
         payload.commandList->open();
-        Uniform uniform{};
-        uniform.color = float4{0, 0, 1, 1};
-        uniform.transform[3][0] = 0.0;
+
         payload.commandList->writeBuffer(payload.constantBuffer, &uniform, sizeof(uniform));
         payload.commandList->setGraphicsState(state);
-        payload.commandList->draw({.vertexCount = 10});
+        payload.commandList->draw({.vertexCount = vertex_count});
         payload.commandList->close();
 
         context.nvrhiDevice->executeCommandList(payload.commandList);
-        return create_null_step();
+        if (params.empty())
+            return create_null_step();
+        else {
+            return create_step_immediately<Draw>(context, std::move(payload), std::move(params));
+        }
     }
 };
 
@@ -202,7 +227,37 @@ struct Compute : public Step {
         payload.commandList->close();
 
         context.nvrhiDevice->executeCommandList(payload.commandList);
-        return create_step_immediately<Draw>(context, std::move(payload));
+        std::vector<Param> uniforms = {
+            Param{-1, Uniform{{1, 0, 0, 1}, translate_x(-0.2)}},
+            Param{0, Uniform{{0, 1, 0, 1}, translate_x(0.0)}},
+            Param{1, Uniform{{0, 0, 1, 1}, translate_x(0.2)}},
+        };
+        return create_step_immediately<Draw>(context, std::move(payload), std::move(uniforms));
+    }
+};
+
+struct Clear : public Step {
+    Payload payload;
+
+    Clear(
+        const Context& ctx,
+        Payload&& payload)
+        : Step(ctx, "Clear", "", ""),
+          payload(std::move(payload)) {
+    }
+
+    StepFuture run(std::string input) override {
+        const nvrhi::FramebufferAttachment& colorA = payload.framebuffer->getDesc().colorAttachments[0];
+        const nvrhi::FramebufferAttachment& depthA = payload.framebuffer->getDesc().depthAttachment;
+
+        auto commandList = payload.commandList;
+        commandList->open();
+        commandList->clearTextureFloat(colorA.texture, colorA.subresources, {0, 0, 0, 0});
+        commandList->clearDepthStencilTexture(depthA.texture, depthA.subresources, true, 1.0f, false, 0);
+        commandList->close();
+        context.nvrhiDevice->executeCommandList(commandList);
+
+        return create_step_immediately<Compute>(context, std::move(payload));
     }
 };
 }
@@ -261,16 +316,16 @@ StepFuture DynamicRender::run(std::string input) {
 
     auto constantBuffer = context.nvrhiDevice->createBuffer(bd);
 
-    return create_step_immediately<Compute>(context,
-                                            Payload{
-                                                std::move(vertex_buffer),
-                                                std::move(compute),
-                                                std::move(command),
-                                                std::move(colorTexture),
-                                                std::move(depthTexture),
-                                                std::move(vertex),
-                                                std::move(pixel),
-                                                std::move(framebuffer),
-                                                std::move(constantBuffer)
-                                            });
+    return create_step_immediately<Clear>(context,
+                                          Payload{
+                                              std::move(vertex_buffer),
+                                              std::move(compute),
+                                              std::move(command),
+                                              std::move(colorTexture),
+                                              std::move(depthTexture),
+                                              std::move(vertex),
+                                              std::move(pixel),
+                                              std::move(framebuffer),
+                                              std::move(constantBuffer)
+                                          });
 }
