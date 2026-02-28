@@ -5,6 +5,7 @@
 #ifndef NVRHI_UNIT_TEST_BACKEND_H
 #define NVRHI_UNIT_TEST_BACKEND_H
 #include <string>
+#include <vector>
 
 inline std::string extension() {
 #if defined(SCENARIO_VULKAN)
@@ -16,4 +17,5 @@ inline std::string extension() {
 #endif
 }
 
+std::vector<char> read_shader(const std::string& name);
 #endif //NVRHI_UNIT_TEST_BACKEND_H

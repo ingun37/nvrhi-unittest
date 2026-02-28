@@ -16,7 +16,12 @@ void run_app(Context&& ctx) {
     while (true) {
         auto app = app_p.get();
         if (app == nullptr) {
-            std::cout << "NULL is (lazily) returned as the next app. Exiting..." << std::endl;
+            std::cout << "NULL is (lazily) returned as the next app." << std::endl;
+
+            std::cout << "Press Enter to terminate" << std::endl;
+            std::cout << "> ";
+            std::string terminate;
+            std::getline(std::cin, terminate);
             break;
         }
         std::string input;

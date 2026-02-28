@@ -10,6 +10,9 @@
 #include "../ConstantBuffer.h"
 #include "../TextureOver16.h"
 #include "../ConstantBlend.h"
+#include "../DepthBias.h"
+#include "../DepthBiasSlopeScale.h"
+#include "../DynamicRender.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -49,7 +52,10 @@ using MyScenarios = AppRegistry<
     RenderPassDepthOnly,
     ConstantBuffer,
     TextureOver16,
-    ConstantBlend
+    ConstantBlend,
+    DepthBias,
+    DepthBiasSlopeScale,
+    DynamicRender
 >;
 
 std::string getPrompt() {
