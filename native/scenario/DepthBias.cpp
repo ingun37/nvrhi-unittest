@@ -2,7 +2,7 @@
 // Created by Ingun Jon on 2/26/26.
 //
 
-#include "MovableTriangle.h"
+#include "DepthBias.h"
 #include <iostream>
 #include <fstream>
 #include <list>
@@ -195,7 +195,7 @@ struct Clear : public Step {
 };
 }
 
-StepFuture MovableTriangle::run(std::string) {
+StepFuture DepthBias::run(std::string) {
     std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
     std::string path = shader_dir + "/movable-triangle" + extension();
     std::ifstream file(path, std::ios::in | std::ios::binary);

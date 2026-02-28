@@ -10,7 +10,7 @@
 #include "../ConstantBuffer.h"
 #include "../TextureOver16.h"
 #include "../ConstantBlend.h"
-#include "../MovableTriangle.h"
+#include "../DepthBias.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -51,7 +51,7 @@ using MyScenarios = AppRegistry<
     ConstantBuffer,
     TextureOver16,
     ConstantBlend,
-    MovableTriangle
+    DepthBias
 >;
 
 std::string getPrompt() {

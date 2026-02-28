@@ -7,10 +7,10 @@
 #include "include/scenario/Step.h"
 
 
-struct MovableTriangle : Step {
-    MovableTriangle() = delete;
+struct DepthBias : Step {
+    DepthBias() = delete;
 
-    explicit MovableTriangle(const Context& ctx)
+    explicit DepthBias(const Context& ctx)
         : Step(ctx, "Movable Triangle", "", "") {
     }
 
