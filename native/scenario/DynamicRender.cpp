@@ -8,6 +8,7 @@
 #include <list>
 #include <array>
 #include "backend.h"
+#include <sstream>
 
 namespace {
 using float4 = std::array<float, 4>;
@@ -39,7 +40,6 @@ struct Uniform {
 constexpr Uniform uniform_example;
 
 struct Param {
-    float slopeScale;
     Uniform uniform;
 };
 
@@ -81,7 +81,9 @@ nvrhi::BindingLayoutHandle make_graphics_binding_layout(const nvrhi::DeviceHandl
 nvrhi::GraphicsPipelineHandle make_graphics_pipeline(const nvrhi::DeviceHandle& device,
                                                      const Payload& payload,
                                                      const nvrhi::BindingLayoutHandle& binding_layout,
-                                                     const float depthBiasSlopeScale
+                                                     const float bias,
+                                                     const float slope,
+                                                     const float clamp
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
@@ -98,8 +100,9 @@ nvrhi::GraphicsPipelineHandle make_graphics_pipeline(const nvrhi::DeviceHandle& 
     gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
     gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
     gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
-    gpd.renderState.rasterState.slopeScaledDepthBias = depthBiasSlopeScale;
-
+    gpd.renderState.rasterState.depthBias = bias;
+    gpd.renderState.rasterState.slopeScaledDepthBias = slope;
+    gpd.renderState.rasterState.depthBiasClamp = clamp;
     gpd.addBindingLayout(binding_layout);
     return device->createGraphicsPipeline(gpd, payload.framebuffer);
 }
@@ -107,11 +110,19 @@ nvrhi::GraphicsPipelineHandle make_graphics_pipeline(const nvrhi::DeviceHandle& 
 nvrhi::GraphicsState make_graphics_state(const Context& context,
                                          const Payload& payload,
                                          std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold,
-                                         const float depthBiasSlopeScale
+                                         const float bias,
+                                         const float slope,
+                                         const float clamp
     ) {
     auto binding_layout = make_graphics_binding_layout(context.nvrhiDevice);
     hold.emplace_back(binding_layout);
-    auto pipeline = make_graphics_pipeline(context.nvrhiDevice, payload, binding_layout, depthBiasSlopeScale);
+    auto pipeline = make_graphics_pipeline(
+        context.nvrhiDevice,
+        payload,
+        binding_layout,
+        bias,
+        slope,
+        clamp);
     hold.emplace_back(pipeline);
     auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
     auto bsi2 = nvrhi::BindingSetItem::TypedBuffer_SRV(1, payload.vertex_buffer, nvrhi::Format::RGBA32_FLOAT);
@@ -175,21 +186,37 @@ struct Draw : Step {
 
     Draw() = delete;
 
-    std::vector<Param> params;
+    std::list<Param> params;
 
-    Draw(const Context& ctx, Payload&& payload, std::vector<Param>&& params)
-        : Step(ctx, "Draw", "", ""),
+    Draw(const Context& ctx, Payload&& payload, std::list<Param>&& params)
+        : Step(ctx, "Draw", "bias, slope, clamp", "0.0 0.0 0.0"),
           payload(std::move(payload)),
           params(params) {
     }
 
-    StepFuture run(std::string) override {
-        std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
-        auto param = params[params.size() - 1];
+    StepFuture run(std::string input) override {
+        float bias, slope, clamp;
+        try {
+            std::stringstream ss(input);
+            ss >> bias >> slope >> clamp;
+        } catch (...) {
+            throw std::runtime_error("Invalid input");
+        }
+        auto param = params.front();
         auto uniform = param.uniform;
-        params.pop_back();
+        std::cout << "bias: " << bias << ", slope: " << slope << ", clamp: " << clamp << "color: (" << uniform.color[0]
+            << ", " << uniform.color[1] << ", " << uniform.color[2] << ", " << uniform.color[3] << ")" << std::endl;
+        std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
+        params.pop_front();
 
-        auto state = make_graphics_state(context, payload, hold, param.slopeScale);
+        auto state = make_graphics_state(
+            context,
+            payload,
+            hold,
+            bias,
+            slope,
+            clamp
+            );
         payload.commandList->open();
 
         payload.commandList->writeBuffer(payload.constantBuffer, &uniform, sizeof(uniform));
@@ -227,10 +254,10 @@ struct Compute : public Step {
         payload.commandList->close();
 
         context.nvrhiDevice->executeCommandList(payload.commandList);
-        std::vector<Param> uniforms = {
-            Param{-1, Uniform{{1, 0, 0, 1}, translate_x(-0.2)}},
-            Param{0, Uniform{{0, 1, 0, 1}, translate_x(0.0)}},
-            Param{1, Uniform{{0, 0, 1, 1}, translate_x(0.2)}},
+        std::list<Param> uniforms = {
+            Param{Uniform{{1, 0, 0, 1}, translate_x(-0.2)}},
+            Param{Uniform{{0, 1, 0, 1}, translate_x(0.0)}},
+            Param{Uniform{{0, 0, 1, 1}, translate_x(0.2)}},
         };
         return create_step_immediately<Draw>(context, std::move(payload), std::move(uniforms));
     }
