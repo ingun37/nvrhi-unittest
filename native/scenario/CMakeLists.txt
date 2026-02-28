@@ -34,6 +34,8 @@ add_library(scenario STATIC
         DepthBias.h
         DepthBiasSlopeScale.cpp
         DepthBiasSlopeScale.h
+        DynamicRender.cpp
+        DynamicRender.h
 )
 target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util glm::glm)
 target_include_directories(scenario PUBLIC include PRIVATE .)

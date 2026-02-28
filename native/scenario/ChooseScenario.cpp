@@ -12,6 +12,7 @@
 #include "../ConstantBlend.h"
 #include "../DepthBias.h"
 #include "../DepthBiasSlopeScale.h"
+#include "../DynamicRender.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -53,7 +54,8 @@ using MyScenarios = AppRegistry<
     TextureOver16,
     ConstantBlend,
     DepthBias,
-    DepthBiasSlopeScale
+    DepthBiasSlopeScale,
+    DynamicRender
 >;
 
 std::string getPrompt() {
