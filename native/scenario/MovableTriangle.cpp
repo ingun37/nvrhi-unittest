@@ -50,12 +50,15 @@ nvrhi::BindingLayoutHandle make_binding_layout(const nvrhi::DeviceHandle& device
 
 nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
                                             const Payload& payload,
-                                            const nvrhi::BindingLayoutHandle& binding_layout) {
+                                            const nvrhi::BindingLayoutHandle& binding_layout,
+                                            const float depthBias
+    ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
     gpd.PS = payload.pixel;
     gpd.primType = nvrhi::PrimitiveType::TriangleList;
     gpd.renderState.depthStencilState.depthTestEnable = true;
+    gpd.renderState.depthStencilState.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
     gpd.renderState.depthStencilState.depthWriteEnable = true;
     gpd.renderState.blendState.targets[0].blendEnable = true;
     gpd.renderState.blendState.targets[0].srcBlend = nvrhi::BlendFactor::SrcAlpha;
@@ -64,6 +67,7 @@ nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
     gpd.renderState.blendState.targets[0].srcBlendAlpha = nvrhi::BlendFactor::One;
     gpd.renderState.blendState.targets[0].destBlendAlpha = nvrhi::BlendFactor::OneMinusSrcAlpha;
     gpd.renderState.blendState.targets[0].blendOpAlpha = nvrhi::BlendOp::Add;
+    gpd.renderState.rasterState.depthBias = depthBias;
 
     gpd.addBindingLayout(binding_layout);
     return device->createGraphicsPipeline(gpd, payload.framebuffer);
@@ -71,10 +75,12 @@ nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
 
 nvrhi::GraphicsState make_state(const Context& context,
                                 const Payload& payload,
-                                std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold) {
+                                std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold,
+                                const float depthBias
+    ) {
     auto binding_layout = make_binding_layout(context.nvrhiDevice);
     hold.emplace_back(binding_layout);
-    auto pipeline = make_pipeline(context.nvrhiDevice, payload, binding_layout);
+    auto pipeline = make_pipeline(context.nvrhiDevice, payload, binding_layout, depthBias);
     hold.emplace_back(pipeline);
     auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
     nvrhi::BindingSetDesc bsd{};
@@ -89,17 +95,15 @@ nvrhi::GraphicsState make_state(const Context& context,
     return std::move(state);
 }
 
-void run_(std::string input, const Payload& payload, const Context& context, float x, float4 color) {
-    int depthBias = 0;
-    try {
-        depthBias = std::stoi(input);
-    } catch (...) {
-        std::cout << "Invalid input: " << input << ", using 0" << std::endl;
-    }
-
+void run_(
+    const Payload& payload,
+    const Context& context,
+    const float x,
+    const float4 color,
+    const float depthBias) {
     std::cout << "Using depth bias: " << depthBias << std::endl;
     std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
-    auto state = make_state(context, payload, hold);
+    auto state = make_state(context, payload, hold, depthBias);
     payload.commandList->open();
     Uniform uniform{};
     uniform.color = color;
@@ -118,49 +122,50 @@ struct DrawBase : public Step {
     DrawBase() = delete;
 
 private:
-    static std::string prompt() {
-        return "Enter depth bias (float):";
-    }
-
 public:
-    float x = 0;
-    float4 color = {1, 0, 0, 1};
-
     DrawBase(const Context& ctx,
              Payload&& payload
         )
-        : Step(ctx, "RunDrawCommand", prompt(), "0"),
+        : Step(ctx, "RunDrawCommand", "", ""),
           payload(std::move(payload)) {
     }
 
-    StepFuture run(std::string input) override {
-        run_(input, payload, context, x, color);
+    void r(const std::string& input,
+           const float x,
+           const float4 color,
+           const float depthBias
+        ) {
+        run_(payload, context, x, color, depthBias);
+    }
+};
 
+struct DrawBlue : public DrawBase {
+    using DrawBase::DrawBase;
+
+    StepFuture run(std::string input) override {
+        std::cout << "DRAW -- blue --" << std::endl;
+        r(input, -0.2, {0, 0, 1, 1}, 1);
         return create_null_step();
     }
 };
 
-struct Draw2 : public DrawBase {
+struct DrawGreen : public DrawBase {
     using DrawBase::DrawBase;
 
     StepFuture run(std::string input) override {
-        std::cout << "DRAW -- 2 --" << std::endl;
-        x = 0.2;
-        color = {0, 1, 0, 1};
-        DrawBase::run(input);
-        return create_null_step();
+        std::cout << "DRAW -- green --" << std::endl;
+        r(input, 0.2, {0, 1, 0, 1}, -1);
+        return create_step_immediately<DrawBlue>(context, std::move(payload));
     }
 };
 
-struct Draw1 : public DrawBase {
+struct DrawRed : public DrawBase {
     using DrawBase::DrawBase;
 
     StepFuture run(std::string input) override {
-        std::cout << "DRAW -- 1 --" << std::endl;
-        x = 0.0;
-        color = {1, 0, 0, 1};
-        DrawBase::run(input);
-        return create_step_immediately<Draw2>(context, std::move(payload));
+        std::cout << "DRAW -- red --" << std::endl;
+        r(input, 0.0, {1, 0, 0, 1}, 0);
+        return create_step_immediately<DrawGreen>(context, std::move(payload));
     }
 };
 
@@ -185,7 +190,7 @@ struct Clear : public Step {
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
 
-        return create_step_immediately<Draw1>(context, std::move(payload));
+        return create_step_immediately<DrawRed>(context, std::move(payload));
     }
 };
 }
