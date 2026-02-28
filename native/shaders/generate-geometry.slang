@@ -11,9 +11,9 @@ void cs(uint3 threadId : SV_DispatchThreadID)
     float x = float(xi) - 0.5;
     float y = float(yi)/64.0 - 0.5;
     float z = float(vi)/128.0;
-    result[vi] = float4(float(xi) * 0.01,
-                        float(yi) * 0.01,
-                        float(vi) * 0.01,
+    result[vi] = float4(x,
+                        y,
+                        z,
                         1.0
                     );
 }
