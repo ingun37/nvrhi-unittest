@@ -1,3 +1,13 @@
+include(FetchContent)
+
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 8d1fd52e5ab5590e2c81768ace50c72bae28f2ed #refs/tags/1.0.3
+)
+
+FetchContent_MakeAvailable(glm)
+
 add_library(scenario STATIC
         include/scenario/scenario.h
         include/scenario/Step.h
@@ -22,8 +32,10 @@ add_library(scenario STATIC
         ConstantBlend.h
         DepthBias.cpp
         DepthBias.h
+        DepthBiasSlopeScale.cpp
+        DepthBiasSlopeScale.h
 )
-target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util)
+target_link_libraries(scenario my_math nvrhi Image my_io nvrhi-util glm::glm)
 target_include_directories(scenario PUBLIC include PRIVATE .)
 add_dependencies(scenario shaders)
 
