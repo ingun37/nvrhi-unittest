@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <sstream>
 
 #include "backend.h"
 
@@ -21,12 +22,26 @@ constexpr float4x4 identity = {
      {0, 0, 0, 1}}
 };
 
+float4x4 translate_x(float x) {
+    return {
+        {{1, 0, 0, 0},
+         {0, 1, 0, 0},
+         {0, 0, 1, 0},
+         {x, 0, 0, 1}
+        }
+    };
+}
+
 struct Uniform {
     float4 color = {1, 0, 0, 1};
     float4x4 transform = identity;
 };
 
 constexpr Uniform uniform_example;
+
+struct Param {
+    Uniform uniform;
+};
 
 struct Payload {
     nvrhi::TextureHandle colorTexture;
@@ -38,7 +53,7 @@ struct Payload {
     nvrhi::CommandListHandle commandList;
 };
 
-nvrhi::BindingLayoutHandle make_binding_layout(const nvrhi::DeviceHandle& device) {
+nvrhi::BindingLayoutHandle make_graphics_binding_layout(const nvrhi::DeviceHandle& device) {
     nvrhi::BindingLayoutItem bli{};
     bli.setSlot(0);
     bli.setType(nvrhi::ResourceType::ConstantBuffer);
@@ -48,10 +63,10 @@ nvrhi::BindingLayoutHandle make_binding_layout(const nvrhi::DeviceHandle& device
     return device->createBindingLayout(bld);
 }
 
-nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
-                                            const Payload& payload,
-                                            const nvrhi::BindingLayoutHandle& binding_layout,
-                                            const float depthBiasSlopeScale
+nvrhi::GraphicsPipelineHandle make_graphics_pipeline(const nvrhi::DeviceHandle& device,
+                                                     const Payload& payload,
+                                                     const nvrhi::BindingLayoutHandle& binding_layout,
+                                                     const float depthBiasSlopeScale
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
@@ -73,14 +88,14 @@ nvrhi::GraphicsPipelineHandle make_pipeline(const nvrhi::DeviceHandle& device,
     return device->createGraphicsPipeline(gpd, payload.framebuffer);
 }
 
-nvrhi::GraphicsState make_state(const Context& context,
-                                const Payload& payload,
-                                std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold,
-                                const float depthBiasSlopeScale
+nvrhi::GraphicsState make_graphics_state(const Context& context,
+                                         const Payload& payload,
+                                         std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold,
+                                         const float depthBiasSlopeScale
     ) {
-    auto binding_layout = make_binding_layout(context.nvrhiDevice);
+    auto binding_layout = make_graphics_binding_layout(context.nvrhiDevice);
     hold.emplace_back(binding_layout);
-    auto pipeline = make_pipeline(context.nvrhiDevice, payload, binding_layout, depthBiasSlopeScale);
+    auto pipeline = make_graphics_pipeline(context.nvrhiDevice, payload, binding_layout, depthBiasSlopeScale);
     hold.emplace_back(pipeline);
     auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constantBuffer);
     nvrhi::BindingSetDesc bsd{};
@@ -95,77 +110,46 @@ nvrhi::GraphicsState make_state(const Context& context,
     return std::move(state);
 }
 
-void run_(
-    const Payload& payload,
-    const Context& context,
-    const float x,
-    const float4 color,
-    const float depthBiasSlopeScale) {
-    std::cout << "Using depthBiasSlopeScale: " << depthBiasSlopeScale << std::endl;
-    std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
-    auto state = make_state(context, payload, hold, depthBiasSlopeScale);
-    payload.commandList->open();
-    Uniform uniform{};
-    uniform.color = color;
-    uniform.transform[3][0] = x;
-    payload.commandList->writeBuffer(payload.constantBuffer, &uniform, sizeof(uniform));
-    payload.commandList->setGraphicsState(state);
-    payload.commandList->draw({.vertexCount = 3});
-    payload.commandList->close();
-
-    context.nvrhiDevice->executeCommandList(payload.commandList);
-}
-
-struct DrawBase : public Step {
+struct Draw : Step {
     Payload payload;
 
-    DrawBase() = delete;
+    Draw() = delete;
 
-private:
-public:
-    DrawBase(const Context& ctx,
-             Payload&& payload
-        )
-        : Step(ctx, "RunDrawCommand", "", ""),
-          payload(std::move(payload)) {
+    std::list<Param> params;
+
+    Draw(const Context& ctx, Payload&& payload, std::list<Param>&& params)
+        : Step(ctx, "Draw", "slope", "0.0"),
+          payload(std::move(payload)),
+          params(std::move(params)) {
     }
-
-    void r(const std::string& input,
-           const float x,
-           const float4 color,
-           const float depthBiasSlopeScale
-        ) {
-        run_(payload, context, x, color, depthBiasSlopeScale);
-    }
-};
-
-struct DrawBlue : public DrawBase {
-    using DrawBase::DrawBase;
 
     StepFuture run(std::string input) override {
-        std::cout << "DRAW -- blue --" << std::endl;
-        r(input, -0.2, {0, 0, 1, 1}, 1);
-        return create_null_step();
-    }
-};
+        auto param = params.front();
+        float slope;
+        try {
+            std::stringstream ss(input);
+            ss >> slope;
+        } catch (...) {
+            throw std::runtime_error("Invalid input");
+        }
+        auto uniform = param.uniform;
+        std::cout << "Using depthBiasSlopeScale: " << slope << std::endl;
+        std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
+        params.pop_front();
 
-struct DrawGreen : public DrawBase {
-    using DrawBase::DrawBase;
+        auto state = make_graphics_state(context, payload, hold, slope);
+        payload.commandList->open();
+        payload.commandList->writeBuffer(payload.constantBuffer, &uniform, sizeof(uniform));
+        payload.commandList->setGraphicsState(state);
+        payload.commandList->draw({.vertexCount = 3});
+        payload.commandList->close();
 
-    StepFuture run(std::string input) override {
-        std::cout << "DRAW -- green --" << std::endl;
-        r(input, 0.2, {0, 1, 0, 1}, -1);
-        return create_step_immediately<DrawBlue>(context, std::move(payload));
-    }
-};
-
-struct DrawRed : public DrawBase {
-    using DrawBase::DrawBase;
-
-    StepFuture run(std::string input) override {
-        std::cout << "DRAW -- red --" << std::endl;
-        r(input, 0.0, {1, 0, 0, 1}, 0);
-        return create_step_immediately<DrawGreen>(context, std::move(payload));
+        context.nvrhiDevice->executeCommandList(payload.commandList);
+        if (params.empty())
+            return create_null_step();
+        else {
+            return create_step_immediately<Draw>(context, std::move(payload), std::move(params));
+        }
     }
 };
 
@@ -190,26 +174,19 @@ struct Clear : public Step {
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
 
-        return create_step_immediately<DrawRed>(context, std::move(payload));
+        std::list<Param> uniforms = {
+            Param{Uniform{{1, 0, 0, 1}, translate_x(-0.2)}},
+            Param{Uniform{{0, 1, 0, 1}, translate_x(0.0)}},
+            Param{Uniform{{0, 0, 1, 1}, translate_x(0.2)}},
+        };
+
+        return create_step_immediately<Draw>(context, std::move(payload), std::move(uniforms));
     }
 };
 }
 
 StepFuture DepthBiasSlopeScale::run(std::string) {
-    std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
-    std::string path = shader_dir + "/tilted-triangle" + extension();
-    std::ifstream file(path, std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open shader file at " + path);
-    }
-    // Determine file size
-    file.seekg(0, std::ios::end);
-    std::streampos fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // Read data into vector
-    std::vector<char> fileData(fileSize);
-    file.read(fileData.data(), fileSize);
+    auto fileData = read_shader("tilted-triangle");
 
     nvrhi::ShaderDesc vertexDesc{};
     vertexDesc.setEntryName("vs");
@@ -251,10 +228,6 @@ StepFuture DepthBiasSlopeScale::run(std::string) {
     auto constantBuffer = context.nvrhiDevice->createBuffer(bd);
 
     auto commandList = context.nvrhiDevice->createCommandList();
-    commandList->open();
-    commandList->writeBuffer(constantBuffer, &uniform_example, sizeof(uniform_example));
-    commandList->close();
-    context.nvrhiDevice->executeCommandList(commandList);
 
     return create_step_immediately<Clear>(context,
                                           Payload{
