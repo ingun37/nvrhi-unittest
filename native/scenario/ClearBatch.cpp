@@ -92,7 +92,7 @@ StepFuture ClearBatch::run(std::string) {
     depthTextureDesc.setWidth(16);
     depthTextureDesc.setFormat(nvrhi::Format::D32);
     depthTextureDesc.setIsRenderTarget(true);
-    auto depthTextures = std::views::iota(0, 3) | std::views::transform([&depthTextureDesc, this](auto i) {
+    auto depthTextures = std::views::iota(0, 4) | std::views::transform([&depthTextureDesc, this](auto i) {
         depthTextureDesc.debugName = "depthTexture" + std::to_string(i);
         return context.nvrhiDevice->createTexture(depthTextureDesc);
     }) | std::ranges::to<std::vector>();
