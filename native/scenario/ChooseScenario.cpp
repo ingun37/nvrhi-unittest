@@ -15,6 +15,7 @@
 #include "DepthBias.h"
 #include "DepthBiasSlopeScale.h"
 #include "DynamicRender.h"
+#include "Stencil.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -58,7 +59,8 @@ using MyScenarios = AppRegistry<
     DepthBias,
     DepthBiasSlopeScale,
     DynamicRender,
-    ClearBatch
+    ClearBatch,
+    Stencil
 >;
 
 std::string getPrompt() {
