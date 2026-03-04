@@ -1,8 +1,10 @@
-cbuffer Uniforms
+struct Uniforms
 {
     float4 color;
     float4x4 transform;
-}
+};
+
+ConstantBuffer<Uniforms> uniforms;
 
 static const float2 g_positions[] = {
 	float2(-0.5, -0.5),
@@ -21,11 +23,11 @@ VertexOutput vs(
 )
 {
 	VertexOutput o;
-	o.position = mul(transform, float4(g_positions[i_vertexId], 0.5, 1.0));
+	o.position = mul(uniforms.transform, float4(g_positions[i_vertexId], 0.5, 1.0));
 	return o;
 }
 [shader("fragment")]
 float4 ps(VertexOutput input): SV_Target0
 {
-	return color;
+	return uniforms.color;
 }
