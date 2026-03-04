@@ -3,16 +3,18 @@
 //
 #include <memory>
 #include "include/scenario/ChooseScenario.h"
-#include "../Map3DStagingMipMap.h"
-#include "../MapStagingAsync.h"
-#include "../RenderPassColorClearDraw.h"
-#include "../RenderPassDepthOnly.h"
-#include "../ConstantBuffer.h"
-#include "../TextureOver16.h"
-#include "../ConstantBlend.h"
-#include "../DepthBias.h"
-#include "../DepthBiasSlopeScale.h"
-#include "../DynamicRender.h"
+
+#include "ClearBatch.h"
+#include "Map3DStagingMipMap.h"
+#include "MapStagingAsync.h"
+#include "RenderPassColorClearDraw.h"
+#include "RenderPassDepthOnly.h"
+#include "ConstantBuffer.h"
+#include "TextureOver16.h"
+#include "ConstantBlend.h"
+#include "DepthBias.h"
+#include "DepthBiasSlopeScale.h"
+#include "DynamicRender.h"
 
 template <typename... Apps>
 struct AppRegistry {
@@ -55,7 +57,8 @@ using MyScenarios = AppRegistry<
     ConstantBlend,
     DepthBias,
     DepthBiasSlopeScale,
-    DynamicRender
+    DynamicRender,
+    ClearBatch
 >;
 
 std::string getPrompt() {

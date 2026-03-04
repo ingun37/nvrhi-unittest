@@ -5,7 +5,13 @@
 #include <iostream>
 
 wgpu::Device create_device(const wgpu::Instance& instance, const wgpu::Adapter& adapter) {
-    wgpu::DeviceDescriptor deviceDesc = {};
+    wgpu::Limits limits{
+        .maxColorAttachmentBytesPerSample = 128
+    };
+    wgpu::DeviceDescriptor deviceDesc(wgpu::DeviceDescriptor::Init{
+        .requiredLimits = &limits,
+    });
+
     deviceDesc.nextInChain = nullptr;
     deviceDesc.SetDeviceLostCallback(
         wgpu::CallbackMode::AllowSpontaneous,
@@ -52,7 +58,6 @@ wgpu::Device create_device(const wgpu::Instance& instance, const wgpu::Adapter& 
         });
 
     wgpu::Device device = nullptr;
-
     // Synchronously create the device
     instance.WaitAny(
         adapter.RequestDevice(

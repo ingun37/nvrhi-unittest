@@ -101,19 +101,8 @@ std::string padToMultipleOfFour(std::string input) {
 }
 
 StepFuture RenderPassColorClearDraw::run(std::string) {
-    std::string shader_dir = SCENARIO_SHADERS_OUTPUT_DIR;
-    std::ifstream file(shader_dir + "/simple" + extension(), std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open shader file at " + shader_dir + "/simple" + extension());
-    }
-    // Determine file size
-    file.seekg(0, std::ios::end);
-    std::streampos fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
     // Read data into vector
-    std::vector<char> fileData(fileSize);
-    file.read(fileData.data(), fileSize);
+    auto file_data = read_shader("simple");
 
     nvrhi::ShaderDesc vertexDesc{};
     vertexDesc.setEntryName("vs");
@@ -121,8 +110,8 @@ StepFuture RenderPassColorClearDraw::run(std::string) {
     nvrhi::ShaderDesc pixelDesc{};
     pixelDesc.setEntryName("ps");
     pixelDesc.setShaderType(nvrhi::ShaderType::Pixel);
-    auto vertex = context.nvrhiDevice->createShader(vertexDesc, fileData.data(), fileData.size());
-    auto pixel = context.nvrhiDevice->createShader(pixelDesc, fileData.data(), fileData.size());
+    auto vertex = context.nvrhiDevice->createShader(vertexDesc, file_data.data(), file_data.size());
+    auto pixel = context.nvrhiDevice->createShader(pixelDesc, file_data.data(), file_data.size());
 
     nvrhi::GraphicsPipelineDesc psoDesc;
     psoDesc.VS = vertex;
