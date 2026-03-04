@@ -68,7 +68,8 @@ nvrhi::InputLayoutHandle create_graphics_input_layout(const nvrhi::DeviceHandle&
 nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle& device,
                                                        const Payload& payload,
                                                        const nvrhi::BindingLayoutHandle& binding_layout,
-                                                       const bool stencil
+                                                       const bool stencil,
+                                                       const bool use_dynamic_ref
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
@@ -85,6 +86,7 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
         .passOp = nvrhi::StencilOp::Replace,
         .stencilFunc = nvrhi::ComparisonFunc::Greater,
     });
+    ds.setDynamicStencilRef(use_dynamic_ref);
     gpd.addBindingLayout(binding_layout);
     auto input_layout = create_graphics_input_layout(device, payload);
     gpd.setInputLayout(input_layout);
@@ -121,21 +123,27 @@ struct Draw : public Step {
         const Context& ctx,
         Payload&& payload
         )
-        : Step(ctx, "RunDrawCommand", "use stencil?", "true"),
+        : Step(ctx, "RunDrawCommand", "use stencil? use dynamic_ref?", "true false"),
           payload(std::move(payload)) {
     }
 
     StepFuture run(std::string input) override {
         std::stringstream ss(input);
         bool use_stencil;
-        ss >> std::boolalpha >> use_stencil;
+        bool use_dynamic_ref;
+        ss >> std::boolalpha >> use_stencil >> use_dynamic_ref;
 
-        std::cout << "Using stencil: " << std::boolalpha << use_stencil << std::endl;
+        std::cout << "Using stencil: " << std::boolalpha << use_stencil << ", use_dynamic_ref: " << use_dynamic_ref <<
+            std::endl;
 
         nvrhi::DrawArguments args{};
         args.vertexCount = 3;
         auto binding_layout = create_graphics_binding_layout(context.nvrhiDevice);
-        auto pipeline = create_graphics_pipeline(context.nvrhiDevice, payload, binding_layout, use_stencil);
+        auto pipeline = create_graphics_pipeline(context.nvrhiDevice,
+                                                 payload,
+                                                 binding_layout,
+                                                 use_stencil,
+                                                 use_dynamic_ref);
         payload.command_list->open();
         payload.command_list->beginTrackingBufferState(payload.constant_buffer, nvrhi::ResourceStates::ConstantBuffer);
         auto state = create_graphics_state(context, payload, pipeline, binding_layout, hold);
