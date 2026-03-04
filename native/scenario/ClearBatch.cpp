@@ -4,8 +4,12 @@
 #include<vector>
 #include "ClearBatch.h"
 
+#include <iostream>
+
 #include "backend.h"
 #include <ranges>
+#include <sstream>
+#include <list>
 
 namespace {
 struct Payload {
@@ -22,12 +26,19 @@ struct Draw : public Step {
 
     Draw() = delete;
 
+
     explicit Draw(const Context& ctx, Payload&& payload)
-        : Step(ctx, "Draw", "", ""),
+        : Step(ctx, "Draw", "clear depth count. -1 is all", "-1"),
           payload(std::move(payload)) {
     }
 
-    StepFuture run(std::string) override {
+    StepFuture run(std::string input) override {
+        std::stringstream ss(input);
+        int clearDepthCnt = 0;
+        ss >> clearDepthCnt;
+
+        if (clearDepthCnt < 0) clearDepthCnt = payload.depthTextures.size();
+        std::cout << "Clearing " << clearDepthCnt << " depth textures" << std::endl;
         auto commandList = context.nvrhiDevice->createCommandList();
         commandList->open();
         for (const auto& texture : payload.colorTextures) {
@@ -36,11 +47,11 @@ struct Draw : public Step {
                                            nvrhi::Color(0.1f, 0.3f, 0.6f, 1.0f));
         }
 
-        for (const auto& texture : payload.depthTextures) {
+        for (const auto& texture : payload.depthTextures | std::views::take(clearDepthCnt)) {
             commandList->clearDepthStencilTexture(texture,
                                                   nvrhi::TextureSubresourceSet(0, 1, 0, 1),
                                                   true,
-                                                  1.0,
+                                                  0,
                                                   false,
                                                   0);
         }
@@ -55,7 +66,6 @@ struct Draw : public Step {
 
         commandList->close();
         context.nvrhiDevice->executeCommandList(commandList);
-
         return create_null_step();
     }
 };
