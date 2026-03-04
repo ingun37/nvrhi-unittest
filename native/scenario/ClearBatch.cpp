@@ -86,6 +86,8 @@ StepFuture ClearBatch::run(std::string) {
     psoDesc.VS = vertex;
     psoDesc.PS = pixel;
     psoDesc.primType = nvrhi::PrimitiveType::TriangleList;
+    psoDesc.renderState.depthStencilState.depthTestEnable = false;
+    psoDesc.renderState.depthStencilState.depthWriteEnable = true;
 
     nvrhi::TextureDesc colorTextureDesc{};
     colorTextureDesc.setHeight(16);
