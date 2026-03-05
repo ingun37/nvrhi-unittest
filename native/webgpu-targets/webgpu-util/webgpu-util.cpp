@@ -8,7 +8,12 @@ wgpu::Device create_device(const wgpu::Instance& instance, const wgpu::Adapter& 
     wgpu::Limits limits{
         .maxColorAttachmentBytesPerSample = 128
     };
+    std::vector<wgpu::FeatureName> features{
+        wgpu::FeatureName::Depth32FloatStencil8
+    };
     wgpu::DeviceDescriptor deviceDesc(wgpu::DeviceDescriptor::Init{
+        .requiredFeatureCount = features.size(),
+        .requiredFeatures = features.data(),
         .requiredLimits = &limits,
     });
 
