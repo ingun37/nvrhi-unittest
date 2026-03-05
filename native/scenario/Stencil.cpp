@@ -20,9 +20,9 @@ constexpr float4x4 identity = {
      {0, 0, 0, 1}}
 };
 
-float4x4 transform(float x, float z) {
+float4x4 transform(float x, float z, bool flip) {
     return {
-        {{1, 0, 0, 0},
+        {{flip ? -1.0f : 1.0f, 0, 0, 0},
          {0, 1, 0, 0},
          {0, 0, 1, 0},
          {x, 0, z, 1}
@@ -69,18 +69,20 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
                                                        const Payload& payload,
                                                        const nvrhi::BindingLayoutHandle& binding_layout,
                                                        const bool stencil,
-                                                       const bool use_dynamic_ref
+                                                       const bool use_dynamic_ref,
+                                                       const uint8_t static_stencil_ref
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
     gpd.PS = payload.pixel;
     gpd.primType = nvrhi::PrimitiveType::TriangleList;
+    gpd.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
     auto& ds = gpd.renderState.depthStencilState;
     ds.depthTestEnable = true;
     ds.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
     ds.depthWriteEnable = true;
     ds.stencilEnable = stencil;
-    ds.setStencilRefValue(0B00111111);
+    ds.setStencilRefValue(static_stencil_ref);
     ds.setFrontFaceStencil(nvrhi::DepthStencilState::StencilOpDesc{
         .failOp = nvrhi::StencilOp::Invert,
         .passOp = nvrhi::StencilOp::Replace,
@@ -119,21 +121,29 @@ struct Draw : public Step {
 
     std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
 
+
     explicit Draw(
         const Context& ctx,
         Payload&& payload
         )
-        : Step(ctx, "RunDrawCommand", "use stencil? use dynamic_ref?", "true false"),
+        : Step(ctx,
+               "RunDrawCommand",
+               "use_stencil, use_dynamic_ref, back_face, static_stencil, dynamic_stencil, z",
+               "true false false 0b00111111 0b11111100 -0.1"),
           payload(std::move(payload)) {
     }
 
     StepFuture run(std::string input) override {
         std::stringstream ss(input);
-        bool use_stencil;
-        bool use_dynamic_ref;
-        ss >> std::boolalpha >> use_stencil >> use_dynamic_ref;
+        bool use_stencil, use_dynamic_ref, back_face;
+        uint8_t static_stencil, dynamic_stencil;
+        float z;
+
+        parse_input(input, &use_stencil, &use_dynamic_ref, &back_face, &static_stencil, &dynamic_stencil, &z);
 
         std::cout << "Using stencil: " << std::boolalpha << use_stencil << ", use_dynamic_ref: " << use_dynamic_ref <<
+            ", back_face: " << back_face << ", static stencil: " << (int)static_stencil << ", dynamic stencil: " <<
+            (int)dynamic_stencil << ", z: " << z <<
             std::endl;
 
         nvrhi::DrawArguments args{};
@@ -143,23 +153,24 @@ struct Draw : public Step {
                                                  payload,
                                                  binding_layout,
                                                  use_stencil,
-                                                 use_dynamic_ref);
+                                                 use_dynamic_ref,
+                                                 static_stencil);
         payload.command_list->open();
         payload.command_list->beginTrackingBufferState(payload.constant_buffer, nvrhi::ResourceStates::ConstantBuffer);
         auto state = create_graphics_state(context, payload, pipeline, binding_layout, hold);
         state.framebuffer = payload.framebuffer;
         Uniform uniform;
         uniform.color = {1, 0, 0, 1};
-        uniform.transform = transform(-0.2, 0.0);
+        uniform.transform = transform(-0.2, 0.0, back_face);
         payload.command_list->writeBuffer(payload.constant_buffer, &uniform, sizeof(uniform));
         payload.command_list->setGraphicsState(state);
         payload.command_list->draw(args);
 
         // Dynamic ref shourdn't work here because it was set false during the pipeline setup
-        state.setDynamicStencilRefValue(0B11111100);
+        state.setDynamicStencilRefValue(dynamic_stencil);
         uniform.color = {0, 1, 0, 1};
         // Even though the second triangle is upfront, the intersecting area should be screened at the stencil test
-        uniform.transform = transform(0.2, -0.1);
+        uniform.transform = transform(0.2, z, back_face);
         payload.command_list->writeBuffer(payload.constant_buffer, &uniform, sizeof(uniform));
         payload.command_list->setGraphicsState(state);
         payload.command_list->draw(args);
