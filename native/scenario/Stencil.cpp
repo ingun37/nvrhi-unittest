@@ -20,9 +20,9 @@ constexpr float4x4 identity = {
      {0, 0, 0, 1}}
 };
 
-float4x4 transform(float x, float z, bool flip) {
+float4x4 transform(float x, float z) {
     return {
-        {{flip ? -1.0f : 1.0f, 0, 0, 0},
+        {{1, 0, 0, 0},
          {0, 1, 0, 0},
          {0, 0, 1, 0},
          {x, 0, z, 1}
@@ -70,13 +70,15 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
                                                        const nvrhi::BindingLayoutHandle& binding_layout,
                                                        const bool stencil,
                                                        const bool use_dynamic_ref,
+                                                       const bool back_face,
                                                        const uint8_t static_stencil_ref
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
     gpd.PS = payload.pixel;
     gpd.primType = nvrhi::PrimitiveType::TriangleList;
-    gpd.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
+    gpd.renderState.rasterState.cullMode = back_face ? nvrhi::RasterCullMode::Front : nvrhi::RasterCullMode::Back;
+    gpd.renderState.rasterState.setFrontCounterClockwise(back_face);
     auto& ds = gpd.renderState.depthStencilState;
     ds.depthTestEnable = true;
     ds.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
@@ -85,8 +87,15 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
     ds.setStencilRefValue(static_stencil_ref);
     ds.setFrontFaceStencil(nvrhi::DepthStencilState::StencilOpDesc{
         .failOp = nvrhi::StencilOp::Invert,
+        .depthFailOp = nvrhi::StencilOp::DecrementAndWrap,
         .passOp = nvrhi::StencilOp::Replace,
         .stencilFunc = nvrhi::ComparisonFunc::Greater,
+    });
+    ds.setBackFaceStencil(nvrhi::DepthStencilState::StencilOpDesc{
+        .failOp = nvrhi::StencilOp::Zero,
+        .depthFailOp = nvrhi::StencilOp::Invert,
+        .passOp = nvrhi::StencilOp::Replace,
+        .stencilFunc = nvrhi::ComparisonFunc::LessOrEqual,
     });
     ds.setDynamicStencilRef(use_dynamic_ref);
     gpd.addBindingLayout(binding_layout);
@@ -95,22 +104,26 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
     return device->createGraphicsPipeline(gpd, payload.framebuffer);
 }
 
-nvrhi::GraphicsState create_graphics_state(const Context& context,
-                                           const Payload& payload,
-                                           const nvrhi::GraphicsPipelineHandle& pipeline,
-                                           const nvrhi::BindingLayoutHandle& binding_layout,
-                                           std::list<nvrhi::RefCountPtr<nvrhi::IResource> >& hold
+nvrhi::BindingSetHandle create_graphics_binding_set(const Context& context,
+                                                    const Payload& payload,
+                                                    const nvrhi::BindingLayoutHandle& binding_layout
     ) {
     auto bsi = nvrhi::BindingSetItem::ConstantBuffer(0, payload.constant_buffer);
     nvrhi::BindingSetDesc bsd{};
     bsd.addItem(bsi);
-    auto bs = context.nvrhiDevice->createBindingSet(bsd, binding_layout);
-    hold.emplace_back(bs);
+    return context.nvrhiDevice->createBindingSet(bsd, binding_layout);
+}
+
+nvrhi::GraphicsState create_graphics_state(const Context& context,
+                                           const Payload& payload,
+                                           const nvrhi::GraphicsPipelineHandle& pipeline,
+                                           const nvrhi::BindingSetHandle& binding_set
+    ) {
     nvrhi::GraphicsState state;
     state.setPipeline(pipeline);
     state.setFramebuffer(payload.framebuffer);
     state.viewport.addViewportAndScissorRect(payload.framebuffer->getFramebufferInfo().getViewport());
-    state.addBindingSet(bs);
+    state.addBindingSet(binding_set);
     return std::move(state);
 }
 
@@ -119,31 +132,42 @@ struct Draw : public Step {
 
     Draw() = delete;
 
-    std::list<nvrhi::RefCountPtr<nvrhi::IResource> > hold;
-
+    std::list<std::string> inputs;
 
     explicit Draw(
         const Context& ctx,
-        Payload&& payload
+        Payload&& payload,
+        std::list<std::string>&& inputs
         )
         : Step(ctx,
                "RunDrawCommand",
-               "use_stencil, use_dynamic_ref, back_face, static_stencil, dynamic_stencil, z",
-               "true false false 0b00111111 0b11111100 -0.1"),
+               "use_stencil, use_dynamic_ref, back_face, static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean, z",
+               inputs.front()),
           payload(std::move(payload)) {
+        inputs.pop_front();
+        this->inputs = std::move(inputs);
     }
 
     StepFuture run(std::string input) override {
         std::stringstream ss(input);
         bool use_stencil, use_dynamic_ref, back_face;
-        uint8_t static_stencil, dynamic_stencil;
+        uint8_t static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean;
         float z;
 
-        parse_input(input, &use_stencil, &use_dynamic_ref, &back_face, &static_stencil, &dynamic_stencil, &z);
+        parse_input(input,
+                    &use_stencil,
+                    &use_dynamic_ref,
+                    &back_face,
+                    &static_stencil,
+                    &dynamic_stencil_0,
+                    &dynamic_stencil_1,
+                    &stencil_clean,
+                    &z);
 
-        std::cout << "Using stencil: " << std::boolalpha << use_stencil << ", use_dynamic_ref: " << use_dynamic_ref <<
-            ", back_face: " << back_face << ", static stencil: " << (int)static_stencil << ", dynamic stencil: " <<
-            (int)dynamic_stencil << ", z: " << z <<
+        std::cout << "Using stencil: " << std::boolalpha << use_stencil << "\nuse_dynamic_ref: " << use_dynamic_ref <<
+            "\nback_face: " << back_face << "\nstatic stencil: " << (int)static_stencil << "\ndynamic stencil 0: " <<
+            (int)dynamic_stencil_0 << "\ndynamic stencil 1:" << (int)dynamic_stencil_1 << "\nstencil_clean: " << (int)
+            stencil_clean << "\nz: " << z <<
             std::endl;
 
         nvrhi::DrawArguments args{};
@@ -154,23 +178,38 @@ struct Draw : public Step {
                                                  binding_layout,
                                                  use_stencil,
                                                  use_dynamic_ref,
+                                                 back_face,
                                                  static_stencil);
+        const nvrhi::FramebufferAttachment& colorA = payload.framebuffer->getDesc().colorAttachments[0];
+        const nvrhi::FramebufferAttachment& depthA = payload.framebuffer->getDesc().depthAttachment;
+
         payload.command_list->open();
+        payload.command_list->clearTextureFloat(colorA.texture, colorA.subresources, {0.1f, 0.3f, 0.6f, 1.0f});
+        payload.command_list->clearDepthStencilTexture(depthA.texture,
+                                                       depthA.subresources,
+                                                       true,
+                                                       1.0f,
+                                                       true,
+                                                       stencil_clean);
+
         payload.command_list->beginTrackingBufferState(payload.constant_buffer, nvrhi::ResourceStates::ConstantBuffer);
-        auto state = create_graphics_state(context, payload, pipeline, binding_layout, hold);
+        auto binding_set = create_graphics_binding_set(context, payload, binding_layout);
+        auto state = create_graphics_state(context, payload, pipeline, binding_set);
         state.framebuffer = payload.framebuffer;
         Uniform uniform;
+        state.setDynamicStencilRefValue(dynamic_stencil_0);
+
         uniform.color = {1, 0, 0, 1};
-        uniform.transform = transform(-0.2, 0.0, back_face);
+        uniform.transform = transform(-0.2, 0.0);
         payload.command_list->writeBuffer(payload.constant_buffer, &uniform, sizeof(uniform));
         payload.command_list->setGraphicsState(state);
         payload.command_list->draw(args);
 
         // Dynamic ref shourdn't work here because it was set false during the pipeline setup
-        state.setDynamicStencilRefValue(dynamic_stencil);
+        state.setDynamicStencilRefValue(dynamic_stencil_1);
         uniform.color = {0, 1, 0, 1};
         // Even though the second triangle is upfront, the intersecting area should be screened at the stencil test
-        uniform.transform = transform(0.2, z, back_face);
+        uniform.transform = transform(0.2, z);
         payload.command_list->writeBuffer(payload.constant_buffer, &uniform, sizeof(uniform));
         payload.command_list->setGraphicsState(state);
         payload.command_list->draw(args);
@@ -178,32 +217,10 @@ struct Draw : public Step {
         payload.command_list->close();
         context.nvrhiDevice->executeCommandList(payload.command_list);
 
-        return create_null_step();
-    }
-};
-
-struct Clear : public Step {
-    Payload payload;
-
-    Clear(
-        const Context& ctx,
-        Payload&& payload)
-        : Step(ctx, "Clear", "", ""),
-          payload(std::move(payload)) {
-    }
-
-    StepFuture run(std::string input) override {
-        const nvrhi::FramebufferAttachment& colorA = payload.framebuffer->getDesc().colorAttachments[0];
-        const nvrhi::FramebufferAttachment& depthA = payload.framebuffer->getDesc().depthAttachment;
-
-        auto command_list = payload.command_list;
-        command_list->open();
-        command_list->clearTextureFloat(colorA.texture, colorA.subresources, {0.1f, 0.3f, 0.6f, 1.0f});
-        command_list->clearDepthStencilTexture(depthA.texture, depthA.subresources, true, 1.0f, true, 0);
-        command_list->close();
-        context.nvrhiDevice->executeCommandList(command_list);
-
-        return create_step_immediately<Draw>(context, std::move(payload));
+        if (inputs.empty())
+            return create_null_step();
+        else
+            return create_step_immediately<Draw>(context, std::move(payload), std::move(inputs));
     }
 };
 }
@@ -252,15 +269,22 @@ StepFuture Stencil::run(std::string) {
 
     auto command_list = context.nvrhiDevice->createCommandList();
 
-    return create_step_immediately<Clear>(
-        context,
-        Payload{
-            std::move(colorTexture),
-            std::move(depthTexture),
-            std::move(vertex),
-            std::move(pixel),
-            std::move(framebuffer),
-            std::move(constant_buffer),
-            std::move(command_list)
-        });
+    return create_step_immediately<Draw>(context,
+                                         Payload{
+                                             std::move(colorTexture),
+                                             std::move(depthTexture),
+                                             std::move(vertex),
+                                             std::move(pixel),
+                                             std::move(framebuffer),
+                                             std::move(constant_buffer),
+                                             std::move(command_list)
+                                         },
+                                         std::list<std::string>{
+                                             "false false false 0b00001111 0b00111111 0b11111100 0 -0.1",
+                                             "true false false 0b00001111 0b00111111 0b11111100 0 -0.1",
+                                             "true true false 0b00001111 0b00111111 0b11111100 0 -0.1",
+                                             "true true true 0b00001111 0b00111111 0b11111100 255 -0.1",
+                                             "true false true 0b00001111 0b00111111 0b11111100 255 -0.1",
+                                             "true false true 0b00001111 0b00111111 0b11111100 255 0.1",
+                                         });
 }
