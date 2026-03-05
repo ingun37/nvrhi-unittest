@@ -14,10 +14,10 @@
       <file path="$PROJECT_DIR$/cmake-build-xcode-webgpu" />
       <file path="$PROJECT_DIR$/dawn/out" />
       <file path="$PROJECT_DIR$/dawn/third_party" />
-      <file path="$USER_HOME$/projects/NVRHI/rtxmu" />
-      <file path="$USER_HOME$/projects/NVRHI/thirdparty/DirectX-Headers" />
-      <file path="$USER_HOME$/projects/NVRHI/thirdparty/Vulkan-Headers" />
-      <file path="$USER_HOME$/projects/NVRHI/thirdparty/dawn" />
+      <file path="$USER_HOME$/projects/nvrhi/rtxmu" />
+      <file path="$USER_HOME$/projects/nvrhi/thirdparty/DirectX-Headers" />
+      <file path="$USER_HOME$/projects/nvrhi/thirdparty/Vulkan-Headers" />
+      <file path="$USER_HOME$/projects/nvrhi/thirdparty/dawn" />
     </excludeRoots>
   </component>
 </project>

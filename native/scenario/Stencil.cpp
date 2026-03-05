@@ -71,7 +71,9 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
                                                        const bool stencil,
                                                        const bool use_dynamic_ref,
                                                        const bool back_face,
-                                                       const uint8_t static_stencil_ref
+                                                       const uint8_t static_stencil_ref,
+                                                       const uint8_t read_mask,
+                                                       const uint8_t write_mask
     ) {
     nvrhi::GraphicsPipelineDesc gpd;
     gpd.VS = payload.vertex;
@@ -98,6 +100,8 @@ nvrhi::GraphicsPipelineHandle create_graphics_pipeline(const nvrhi::DeviceHandle
         .stencilFunc = nvrhi::ComparisonFunc::LessOrEqual,
     });
     ds.setDynamicStencilRef(use_dynamic_ref);
+    ds.setStencilReadMask(read_mask);
+    ds.setStencilWriteMask(write_mask);
     gpd.addBindingLayout(binding_layout);
     auto input_layout = create_graphics_input_layout(device, payload);
     gpd.setInputLayout(input_layout);
@@ -141,7 +145,7 @@ struct Draw : public Step {
         )
         : Step(ctx,
                "RunDrawCommand",
-               "use_stencil, use_dynamic_ref, back_face, static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean, z",
+               "use_stencil, use_dynamic_ref, back_face, static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean, read_mask, write_mask, z",
                inputs.front()),
           payload(std::move(payload)) {
         inputs.pop_front();
@@ -151,7 +155,7 @@ struct Draw : public Step {
     StepFuture run(std::string input) override {
         std::stringstream ss(input);
         bool use_stencil, use_dynamic_ref, back_face;
-        uint8_t static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean;
+        uint8_t static_stencil, dynamic_stencil_0, dynamic_stencil_1, stencil_clean, read_mask, write_mask;
         float z;
 
         parse_input(input,
@@ -162,12 +166,14 @@ struct Draw : public Step {
                     &dynamic_stencil_0,
                     &dynamic_stencil_1,
                     &stencil_clean,
+                    &read_mask,
+                    &write_mask,
                     &z);
 
         std::cout << "Using stencil: " << std::boolalpha << use_stencil << "\nuse_dynamic_ref: " << use_dynamic_ref <<
             "\nback_face: " << back_face << "\nstatic stencil: " << (int)static_stencil << "\ndynamic stencil 0: " <<
-            (int)dynamic_stencil_0 << "\ndynamic stencil 1:" << (int)dynamic_stencil_1 << "\nstencil_clean: " << (int)
-            stencil_clean << "\nz: " << z <<
+            (int)dynamic_stencil_0 << "\ndynamic stencil 1: " << (int)dynamic_stencil_1 << "\nstencil_clean: " << (int)
+            stencil_clean << "\nread_mask: " << (int)read_mask << "\nwrite_mask: " << (int)write_mask << "\nz: " << z <<
             std::endl;
 
         nvrhi::DrawArguments args{};
@@ -179,7 +185,9 @@ struct Draw : public Step {
                                                  use_stencil,
                                                  use_dynamic_ref,
                                                  back_face,
-                                                 static_stencil);
+                                                 static_stencil,
+                                                 read_mask,
+                                                 write_mask);
         const nvrhi::FramebufferAttachment& colorA = payload.framebuffer->getDesc().colorAttachments[0];
         const nvrhi::FramebufferAttachment& depthA = payload.framebuffer->getDesc().depthAttachment;
 
@@ -280,11 +288,37 @@ StepFuture Stencil::run(std::string) {
                                              std::move(command_list)
                                          },
                                          std::list<std::string>{
-                                             "false false false 0b00001111 0b00111111 0b11111100 0 -0.1",
-                                             "true false false 0b00001111 0b00111111 0b11111100 0 -0.1",
-                                             "true true false 0b00001111 0b00111111 0b11111100 0 -0.1",
-                                             "true true true 0b00001111 0b00111111 0b11111100 255 -0.1",
-                                             "true false true 0b00001111 0b00111111 0b11111100 255 -0.1",
-                                             "true false true 0b00001111 0b00111111 0b11111100 255 0.1",
+                                             "false false false 0b00001111 0b00111111 0b11111100 0 255 255 -0.1",
+                                             "true false false 0b00001111 0b00111111 0b11111100 0 255 255 -0.1",
+                                             "true true false 0b00001111 0b00111111 0b11111100 0 255 255 -0.1",
+                                             "true true true 0b00001111 0b00111111 0b11111100 255 255 255 -0.1",
+                                             "true false true 0b00001111 0b00111111 0b11111100 255 255 255 -0.1",
+                                             "true false true 0b00001111 0b00111111 0b11111100 255 255 255 0.1",
+                                             // "true true true 0b00001111 0b00111111 0b11111100 255 0b11111111 0b11111111 -0.1",
+                                             "true true true 0b00001111 0b00010111 0b11101000 255 0b00011000 255 -0.1",
                                          });
+    /*
+    *        parse_input(input,
+                    &use_stencil,
+                    &use_dynamic_ref,
+                    &back_face,
+                    &static_stencil,
+                    &dynamic_stencil_0,
+                    &dynamic_stencil_1,
+                    &stencil_clean,
+                    &z);
+
+    ds.setFrontFaceStencil(nvrhi::DepthStencilState::StencilOpDesc{
+        .failOp = nvrhi::StencilOp::Invert,
+        .depthFailOp = nvrhi::StencilOp::DecrementAndWrap,
+        .passOp = nvrhi::StencilOp::Replace,
+        .stencilFunc = nvrhi::ComparisonFunc::Greater,
+    });
+    ds.setBackFaceStencil(nvrhi::DepthStencilState::StencilOpDesc{
+        .failOp = nvrhi::StencilOp::Zero,
+        .depthFailOp = nvrhi::StencilOp::Invert,
+        .passOp = nvrhi::StencilOp::Replace,
+        .stencilFunc = nvrhi::ComparisonFunc::LessOrEqual,
+    });
+     */
 }

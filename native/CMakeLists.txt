@@ -20,7 +20,7 @@ FetchContent_Declare(
         nvrhi
         #        GIT_REPOSITORY ${NVRHI_GIT_URL}
         #        GIT_TAG 7b92100074c99cc5e3abbeb3fbdd9f2beabbe778
-        SOURCE_DIR /Users/ingun/projects/NVRHI
+        SOURCE_DIR /Users/ingun/projects/nvrhi
 )
 
 FetchContent_Declare(
